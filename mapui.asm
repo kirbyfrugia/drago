@@ -307,13 +307,18 @@ ruil2l:
 
   //tile sel arrows  
   lda #upchr
-  sta $04ed
+  sta $044f
+  lda #vbarchr
+  sta $0477
+  sta $049f
   lda #downchr
-  sta $04ee
+  sta $04c7
 
   lda fghclr
-  sta $d8ed
-  sta $d8ee
+  sta $d84f
+  sta $d877
+  sta $d89f
+  sta $d8c7
 
   jsr lts
 
@@ -691,8 +696,8 @@ uiss:
   .byte 33,21,34,22,0,<(crp-1),>(crp-1)
   .byte 35,21,36,22,0,<(ctp-1),>(ctp-1)
   .byte 37,21,38,22,0,<(cbp-1),>(cbp-1)
-  .byte 37,5,38,6,128,<(tssup-1),>(tssup-1)
-  .byte 38,5,39,6,128,<(tssdp-1),>(tssdp-1)
+  .byte 39,1,40,2,128,<(tssup-1),>(tssup-1)
+  .byte 39,4,40,5,128,<(tssdp-1),>(tssdp-1)
   .byte 0,2,29,24,128,<(mapp-1),>(mapp-1)
   .byte 29,2,30,3,128,<(mapup-1),>(mapup-1)
   .byte 29,23,30,24,128,<(mapdp-1),>(mapdp-1)
