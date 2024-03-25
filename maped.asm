@@ -2,7 +2,11 @@
 // written in wordwise, assembled in
 // lancaster asm
 
+  //*= $0801 "Basic Upstart"
+  //BasicUpstart(init)
+
   *=$8000 "MapEd"
+
   jmp init
 
 #import "const.asm"
@@ -61,23 +65,14 @@ loop:
   jsr injs
   jsr inkb
   jsr events
-  jsr stats
-  jsr log
+  jsr statline
 loopd:
   jmp loop
 
-log:
-  lda cursx
-  cmp #29
-  bcs logd
-
-  lda cursy
-  cmp #2
-  bcc logd
-
-  lda #$28
+statline:
+  lda #$c1
   sta zpb0
-  lda #$04
+  lda #$07
   sta zpb1
   ldy #0
 
@@ -118,13 +113,8 @@ log:
 
   iny
   lda cursy
-  sec
-  sbc #2
   jsr loghexit
-logd:
-  rts
 
-stats:
   lda chrtmrunlast
   sec
   sbc chrtmrun0
@@ -135,18 +125,30 @@ stats:
 
   lda tmp0
   clc
-  adc #2
+  adc mdtmrunlast
+  sta tmp0
+  lda tmp1
+  adc mdtmrunlast+1
+  sta tmp1
+
+  lda tmp0
+  sec
+  sbc mdtmrun0
+  sta tmp0
+  lda tmp1
+  sbc mdtmrun0+1
+  sta tmp1
+
+  lda tmp0
+  clc
+  adc #4
   sta tmp0
   lda tmp1
   adc #0
   sta tmp1
 
-  lda #$8e
-  sta zpb0
-  lda #$07
-  sta zpb1
-
-  ldy #0
+  iny
+  iny
   lda #13 //m
   sta (zpb0),Y
   iny
@@ -158,21 +160,8 @@ stats:
   iny
   lda tmp0
   jsr loghexit
-  iny
-  lda #2 //b
-  sta (zpb0),Y
 
-  lda #$b6
-  sta zpb0
-  lda #$07
-  sta zpb1
-
-  ldy #0
-  lda etime+2
-  jsr loghexit
   iny
-  lda etime+1
-  jsr loghexit
   iny
   lda etime
   jsr loghexit

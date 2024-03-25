@@ -3,7 +3,7 @@
 .var scrcol0   = 0
 .var scrwidth  = 29
 .var scrrow0   = 2
-.var scrheight = 23
+.var scrheight = 22
 
 cls:
   ldy #0
@@ -184,17 +184,17 @@ redrawui:
   lda ch,X
   sta fghclr+1
  
-  ToZPB($1d,$04,zpb0)
-  ToZPB($1d,$d8,zpb2)
+  ToZPB($95,$04,zpb0)
+  ToZPB($95,$d8,zpb2)
   ldy #0
-  ldx #24
+  ldx #20
 vbarl:
   lda #vbarchr
   sta (zpb0),Y
   lda fghclr
   sta (zpb2),Y
   dex
-  bmi vbarld
+  beq vbarld
   lda zpb0
   clc
   adc #40
@@ -274,21 +274,14 @@ vbarld:
   lda tsdata,X
   sta $daa1
 
-  // color line 2
+  // color line 2 and last
   lda fghclr
-  ldy #24
+  ldy #29
 ruil2l:
   sta $d828,Y
+  sta $dbc0,Y
   dey
   bpl ruil2l
-
-  // color mem line
-  ldy #39
-ruiml:
-  sta $db70,Y
-  dey
-  cpy #29
-  bne ruiml
 
   //bgclrs, set fg color to indicate
   //multicolor character
@@ -298,19 +291,19 @@ ruiml:
 
   //map arrows
   lda #upchr
-  sta $0441
+  sta $046d
   lda #downchr
-  sta $0442
+  sta $07b5
   lda #lchr
-  sta $0443
+  sta $07c0
   lda #rchr
-  sta $0444
+  sta $07dc
 
   lda fghclr
-  sta $d841
-  sta $d842
-  sta $d843
-  sta $d844
+  sta $d86d
+  sta $dbb5
+  sta $dbc0
+  sta $dbdc
 
   //tile sel arrows  
   lda #upchr
@@ -391,7 +384,7 @@ initui:
   stx uicb+2
   stx uifgb+2
 
-  lda #2
+  lda #3
   sta tmrow0
   lda #0
   sta tmcol0
@@ -700,11 +693,11 @@ uiss:
   .byte 37,21,38,22,0,<(cbp-1),>(cbp-1)
   .byte 37,5,38,6,128,<(tssup-1),>(tssup-1)
   .byte 38,5,39,6,128,<(tssdp-1),>(tssdp-1)
-  .byte 0,2,29,25,128,<(mapp-1),>(mapp-1)
-  .byte 25,1,26,2,128,<(mapup-1),>(mapup-1)
-  .byte 26,1,27,2,128,<(mapdp-1),>(mapdp-1)
-  .byte 27,1,28,2,128,<(maplp-1),>(maplp-1)
-  .byte 28,1,29,2,128,<(maprp-1),>(maprp-1)
+  .byte 0,2,29,24,128,<(mapp-1),>(mapp-1)
+  .byte 29,2,30,3,128,<(mapup-1),>(mapup-1)
+  .byte 29,23,30,24,128,<(mapdp-1),>(mapdp-1)
+  .byte 0,24,1,25,128,<(maplp-1),>(maplp-1)
+  .byte 28,24,29,25,128,<(maprp-1),>(maprp-1)
   .byte 31,1,39,5,0,<(tsp-1),>(tsp-1)
   .byte 31,7,39,16,0,<(tep-1),>(tep-1) 
 uise:

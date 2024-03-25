@@ -10,6 +10,14 @@
 .var scrrow0   = 4
 .var scrheight = 20
 
+  jmp init
+
+#import "const.s"
+#import "data.s"
+#import "utils.s"
+#import "tm.s"
+#import "tme.s"
+
 init:
   lda #0
   sta ptime
@@ -740,8 +748,4 @@ eb.ks:      .byte 0
 eb.kd:      .byte 0
 eb.ksp:     .byte 0
 
-#import "const.s"
-#import "data.s"
-#import "utils.s"
-#import "tm.s"
-#import "tme.s"
+
