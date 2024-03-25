@@ -187,8 +187,12 @@ redrawmap:
   rts
 
 addcp:
-  // todo, make sure cursor is inside
-  // the map editor before allowing this
+  lda cursx
+  cmp #29
+  bcs addcpd
+  lda cursy
+  cmp #2
+  bcc addcpd
 
   lda tmcol0
   clc
@@ -226,11 +230,18 @@ addcp:
 
   jsr updscrn
   jsr redrawmap  
-
+addcpd:
   rts
 
-
 delcp:
+  // todo, make sure cursor is inside the map editor before allowing this
+  lda cursx
+  cmp #29
+  bcs delcpd
+  lda cursy
+  cmp #2
+  bcc delcpd
+
   lda tmcolc
   cmp #41
   bcs decpok
