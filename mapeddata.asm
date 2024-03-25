@@ -65,8 +65,8 @@ sprbox16x8:
 
 //MAP ^ BG  ^ C1  ^ C2
 strmapl:    .byte 13,1,16,32,247,32,2,7,32,32,247,254,3,49,32,32,247,255,3,50,0
-//TILESET
-strtiles:   .byte 20,9,12,5,19,5,20,0
+//TILES
+strtiles:   .byte 20,9,12,5,19,0
 //EDIT TILE
 strtile:    .byte 5,4,9,20,32,20,9,12,5,0
 //oMULTICLR
@@ -91,4 +91,10 @@ strtsf:     .byte 20,9,12,5,19,5,20,58,32,0
 strtif:     .byte 20,9,12,5,9,14,6,15,58,32,0
 //LEVEL:
 strlvlf:    .byte 12,5,22,5,12,58,32,0
+//[NEW]:
+strnew:    .byte 27,14,5,23,29,0
+//[SAVE]:
+strsave:    .byte 27,19,1,22,5,29,0
+//[LOAD]:
+strload:    .byte 27,12,15,1,4,29,0
            

@@ -23,8 +23,6 @@ init:
   sta cursy
   sta tsf
   sta ctidx
-  sta ctx
-  sta cty
 
   lda #8
   sta cursmvsprx
@@ -1226,6 +1224,30 @@ mapdp:
   jsr redraw
   rts
 
+newp:
+  lda #3
+  sta tmrow0
+  lda #0
+  sta tmcol0
+  sta tmcol0+1
+
+  ldx #0
+  lda #1
+newpl:
+  sta tsdata,X
+  inx
+  bne newpl
+  
+  jsr initchrs
+  jsr emptyscrn
+  jsr redrawmap
+  jsr lts
+  jsr settile
+  jsr drawtile
+  jsr fgbp
+  jsr setbrush
+  rts
+
 // in its own subroutine just
 // so we can time it
 redraw:
@@ -1274,10 +1296,6 @@ cursmvsprx:  .byte 0
 cursmvx:     .byte 0
 curstedmaxx: .byte 0
 
-// location of sprite selector in
-// tile mode
-ctx: .byte 0
-cty: .byte 0
 // amount to move left or right
 // in tile mode movement based
 // on multicolor mode being set

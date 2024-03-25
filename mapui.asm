@@ -22,14 +22,8 @@ clsl:
   bne clsl
   rts
 
-initsys:
-// turn on multiclr char mode
-  lda $d016
-  ora #%00010000
-  sta $d016
-
-// turn off keyscan interrupts
-// and switch in character set
+initchrs:
+  // turn off keyscan interrupts and switch in character set
   lda $dc0e
   and #%11111110
   sta $dc0e
@@ -39,8 +33,7 @@ initsys:
   and #%11111011
   sta $01
 
-// copy character rom into program
-// character area
+  // copy character rom into program character area
   lda #$00
   sta $fb
   lda #$d0
@@ -58,7 +51,7 @@ initsys:
 
   jsr copy
 
-// reserved and custom chars
+  // reserved and custom chars
   ldy #7
 custl:
   lda 32*8+$2000,Y //empty
@@ -114,8 +107,7 @@ custl2:
   sta rchr*8+$2000+3
   sta rchr*8+$2000+4
 
-// switch in i/o and restart keyscan
-// interrupt timer
+  // switch in i/o and restart keyscan interrupt timer
   lda $01
   ora #%00000100
   sta $01
@@ -124,13 +116,23 @@ custl2:
   ora #%00000001
   sta $dc0e
 
-// use our in-memory charset
+  // use our in-memory charset
   lda $d018
   and #%11110000
   ora #%00001000
   sta $d018
 
-//set colors
+  rts
+
+initsys:
+  // turn on multiclr char mode
+  lda $d016
+  ora #%00010000
+  sta $d016
+
+  jsr initchrs
+
+  //set colors
   //bgclr
   lda #0
   sta $d021
@@ -214,11 +216,36 @@ vbarld:
   jsr ps
   ToZPB($00,$d8,zpb2)
   jsr cs
+
+  ToZPB(<strnew,>strnew,zpb0)
+  ToZPB($28,$04,zpb2)
+  jsr ps
+  ToZPB($28,$d8,zpb2)
+  jsr cs
+
+  ToZPB(<strload,>strload,zpb0)
+  ToZPB($2d,$04,zpb2)
+  jsr ps
+  ToZPB($2d,$d8,zpb2)
+  jsr cs
+
+  ToZPB(<strsave,>strsave,zpb0)
+  ToZPB($33,$04,zpb2)
+  jsr ps
+  ToZPB($33,$d8,zpb2)
+  jsr cs
+
   
   ToZPB(<strtiles,>strtiles,zpb0)
   ToZPB($1e,$04,zpb2)
   jsr ps
   ToZPB($1e,$d8,zpb2)
+  jsr cs
+
+  ToZPB(<strload,>strload,zpb0)
+  ToZPB($ea,$04,zpb2)
+  jsr ps
+  ToZPB($ea,$d8,zpb2)
   jsr cs
 
   ToZPB(<strtile,>strtile,zpb0)
@@ -705,6 +732,7 @@ uiss:
   .byte 28,24,29,25,128,<(maprp-1),>(maprp-1)
   .byte 31,1,39,5,0,<(tsp-1),>(tsp-1)
   .byte 31,7,39,16,0,<(tep-1),>(tep-1) 
+  .byte 0,1,5,2,128,<(newp-1),>(newp-1)
 uise:
 
 
