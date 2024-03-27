@@ -198,7 +198,7 @@ redrawmap:
 //  jsr psetchr
 //
 //  lda #$07
-  sta cursx
+//  sta cursx
 //  lda $0f
 //  sta cursy
 //  jsr psetchr
@@ -341,6 +341,8 @@ addcp:
   lda cursy
   cmp #2
   bcc addcpd
+  cmp #24
+  bcs addcpd
 
   lda tmcol0
   clc
@@ -350,22 +352,16 @@ addcp:
   adc #0
   sta tmcol+1
 
-
   lda #<chrtm
   sta tmptr
   lda #>chrtm
   sta tmptr+1
-
-  lda #43
-  sta newb
   jsr addcol
 
   lda #<mdtm
   sta tmptr
   lda #>mdtm
   sta tmptr+1
-  lda #1
-  sta newb
   jsr addcol
 
   lda tmcolc
@@ -382,13 +378,14 @@ addcpd:
   rts
 
 delcp:
-  // todo, make sure cursor is inside the map editor before allowing this
   lda cursx
   cmp #29
   bcs delcpd
   lda cursy
   cmp #2
   bcc delcpd
+  cmp #24
+  bcs delcpd
 
   lda tmcolc
   cmp #41
@@ -397,9 +394,6 @@ delcp:
   bne decpok
   jmp delcpd
 decpok:
-  // todo, make sure cursor is inside
-  // the map editor before allowing this
-
   lda tmcol0
   clc
   adc cursx
@@ -470,7 +464,7 @@ psetchr:
   sta tmptr
   lda #>chrtm
   sta tmptr+1
-  lda ctidx
+  lda sbchr
   sta newb
   jsr setbyte
 
@@ -478,14 +472,19 @@ psetchr:
   sta tmptr
   lda #>mdtm
   sta tmptr+1
-  ldx ctidx
-  lda tsdata,X
+  lda sbmd
   sta newb
   jsr setbyte  
 
   rts
 
 mapp:
+  lda ctidx
+  sta sbchr
+  ldx ctidx
+  lda tsdata,x
+  sta sbmd
+
   jsr psetchr
   jsr updscrn
   jsr redrawmap  
@@ -1382,6 +1381,26 @@ mapdp:
   jsr redraw
   rts
 
+delchrp:
+  lda cursx
+  cmp #29
+  bcs delchrpd
+  lda cursy
+  cmp #2
+  bcc delchrpd
+  cmp #24
+  bcs delchrpd
+
+  lda #emptychr
+  sta sbchr
+  lda #1
+  sta sbmd
+  jsr psetchr
+  jsr updscrn
+  jsr redrawmap  
+delchrpd:
+  rts
+
 newp:
   lda #3
   sta tmrow0
@@ -1483,6 +1502,10 @@ uibgb:    .byte 0
 uic1b:    .byte 0
 uic2b:    .byte 0
 tsdata:   .fill 256,0
+
+// set byte char and metadata
+sbchr: .byte 0
+sbmd:  .byte 0
 
 //logy:      .byte 0
 //logtmp0:   .byte 0

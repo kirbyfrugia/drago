@@ -664,10 +664,15 @@ inkb:
   //beq ikbsave
   //cmp #42 //*
   //beq ikbload
+  cmp #20 // delete
+  beq ikbdel
   cmp #43 //+
   beq ikbpl
   cmp #45 //-
   beq ikbmi
+  jmp inkbd
+ikbdel:
+  jsr delchrp
   jmp inkbd
 ikbpl:
   jsr addcp
