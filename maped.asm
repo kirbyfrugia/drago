@@ -1,6 +1,4 @@
 //maped.s
-// written in wordwise, assembled in
-// lancaster asm
 
   //*= $0801 "Basic Upstart"
   //BasicUpstart(init)
@@ -23,6 +21,11 @@ init:
   sta cursy
   sta tsf
   sta ctidx
+  //sta logy
+  //sta logtmp0
+  //sta logtmp1
+  //sta logtmp2
+  //sta logtmp3
 
   lda #8
   sta cursmvsprx
@@ -54,6 +57,7 @@ tsdatal:
   jsr redrawmap
   jsr initevents
   
+  //jsr test
 loop:
   lda $d012
   cmp #$F8
@@ -111,6 +115,8 @@ statline:
 
   iny
   lda cursy
+  sec
+  sbc #scrrow0
   jsr loghexit
 
   lda chrtmrunlast
@@ -173,6 +179,161 @@ redrawmap:
   jsr drawscrn
   rts
 
+//test:
+//  lda cursx
+//  pha
+//  lda cursy
+//  pha
+//
+//  lda #$04
+//  sta cursx
+//  lda #$06
+//  sta cursy
+//  jsr psetchr
+//
+//  lda #$07
+//  sta cursx
+//  lda #$0b
+//  sta cursy
+//  jsr psetchr
+//
+//  lda #$07
+  sta cursx
+//  lda $0f
+//  sta cursy
+//  jsr psetchr
+//
+//  lda #$0b
+//  sta cursx
+//  lda #$13
+//  sta cursy
+//  jsr psetchr
+//
+//  lda #$12
+//  sta cursx
+//  lda #$13
+//  sta cursy
+//  jsr psetchr
+//
+//  lda #$07
+//  sta cursx
+//  lda #$13
+//  sta cursy
+//  jsr addcp
+//  jsr addcp
+//  jsr addcp
+//  jsr addcp
+//  jsr addcp
+//  jsr addcp
+//  jsr addcp
+//  jsr addcp
+//  jsr addcp
+//  jsr addcp
+//  //jsr addcp
+//  //jsr addcp
+//
+//  pla
+//  sta cursy
+//  pla
+//  sta cursx
+//  rts
+
+//dump:
+//  lda #$00
+//  sta $fb
+//  lda #$40
+//  sta $fc
+//
+//  lda #$00
+//  sta $fd
+//  lda #$10
+//  sta $fe
+//  
+//  lda #$ff
+//  sta $bb
+//  lda #$07
+//  sta $bc
+//
+//  jsr copy
+//
+//  lda #$00
+//  sta $fb
+//  lda #$60
+//  sta $fc
+//
+//  lda #$00
+//  sta $fd
+//  lda #$18
+//  sta $fe
+//  
+//  lda #$ff
+//  sta $bb
+//  lda #$07
+//  sta $bc
+//
+//  jsr copy
+//
+//  lda #<chrtm
+//  sta $fb
+//  lda #>chrtm
+//  sta $fc
+//
+//  lda #$00
+//  sta $fd
+//  lda #$c0
+//  sta $fe
+//  
+//  lda #$06
+//  sta $bb
+//  lda #$00
+//  sta $bc
+//
+//  jsr copy
+//
+//  lda #<mdtm
+//  sta $fb
+//  lda #>mdtm
+//  sta $fc
+//
+//  lda #$10
+//  sta $fd
+//  lda #$c0
+//  sta $fe
+//  
+//  lda #$06
+//  sta $bb
+//  lda #$00
+//  sta $bc
+//
+//  jsr copy
+//  rts
+
+//log:
+//  pha
+//  tya
+//  pha
+//
+//  ldy logy
+//  lda logtmp0
+//  sta $c060,Y
+//  iny
+//  lda logtmp1
+//  sta $c060,Y
+//  iny
+//  lda logtmp2
+//  sta $c060,Y
+//  iny
+//  lda logtmp3
+//  sta $c060,Y
+//  iny
+//  sty logy
+//
+//  pla
+//  tay
+//  pla
+//  rts
+//
+//
 addcp:
   lda cursx
   cmp #29
@@ -189,20 +350,20 @@ addcp:
   adc #0
   sta tmcol+1
 
+
   lda #<chrtm
-  sta zpb0
+  sta tmptr
   lda #>chrtm
-  sta zpb1
-  jsr settm
+  sta tmptr+1
+
   lda #43
   sta newb
   jsr addcol
 
   lda #<mdtm
-  sta zpb0
+  sta tmptr
   lda #>mdtm
-  sta zpb1
-  jsr settm
+  sta tmptr+1
   lda #1
   sta newb
   jsr addcol
@@ -248,17 +409,15 @@ decpok:
   sta tmcol+1
 
   lda #<chrtm
-  sta zpb0
+  sta tmptr
   lda #>chrtm
-  sta zpb1
-  jsr settm
+  sta tmptr+1
   jsr delcol
 
   lda #<mdtm
-  sta zpb0
+  sta tmptr
   lda #>mdtm
-  sta zpb1
-  jsr settm
+  sta tmptr+1
   jsr delcol
 
   lda tmcolc
@@ -295,7 +454,7 @@ psetchr:
   sta tmcol
   lda tmcol0+1
   adc #0
-  sta tmcol+1
+  sta tmcol+2
 
   lda tmrow0
   clc
@@ -308,22 +467,20 @@ psetchr:
   sta tmrow
 
   lda #<chrtm
-  sta zpb0
+  sta tmptr
   lda #>chrtm
-  sta zpb1
+  sta tmptr+1
   lda ctidx
   sta newb
-  jsr settm
   jsr setbyte
 
   lda #<mdtm
-  sta zpb0
+  sta tmptr
   lda #>mdtm
-  sta zpb1
+  sta tmptr+1
   ldx ctidx
   lda tsdata,X
   sta newb
-  jsr settm
   jsr setbyte  
 
   rts
@@ -1168,6 +1325,7 @@ tssdp:
 tssdpd:
   rts
 
+
 maplp:
   jsr gettm
   lda time
@@ -1326,3 +1484,8 @@ uic1b:    .byte 0
 uic2b:    .byte 0
 tsdata:   .fill 256,0
 
+//logy:      .byte 0
+//logtmp0:   .byte 0
+//logtmp1:   .byte 0
+//logtmp2:   .byte 0
+//logtmp3:   .byte 0

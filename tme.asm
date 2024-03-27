@@ -21,15 +21,6 @@
   lda (location),Y
 }
 
-// updates pointer to tilemap
-// for all tilemap operations
-settm:
-  lda zpb0
-  sta tmptr
-  lda zpb1
-  sta tmptr+1
-  rts
-
 // adds a column and copies the char
 // from the previous column
 // inputs:
@@ -56,6 +47,7 @@ addcol:
   lda tmcol+1
   sta offsethi
 
+  // todo modify this to use X instead of zpb0
   lda #25
   sta zpb0
 
@@ -84,10 +76,12 @@ acl:
   cmp #%00000010
   beq acatnr
 
-  // add new run after this one
+  // no room in this run and it either doesn't match the next one or there's no room in that one either
   jsr addrun
+  // seek ahead 1 since we're adding a char
   lda #1
-  sta acoffset
+  sta offsetlo
+  jsr seek2
   jmp acnl
 acatcr:
   ldy #0
@@ -95,8 +89,7 @@ acatcr:
   clc
   adc #1
   sta (tmrptr),Y
-  lda #0
-  sta acoffset
+  inc tmrl
   jmp acnl
 acatpr:
   ldy #0
@@ -104,8 +97,6 @@ acatpr:
   clc
   adc #1
   sta (pptr),Y
-  lda #0
-  sta acoffset
   jmp acnl
 acatnr:
   ldy #0
@@ -113,17 +104,16 @@ acatnr:
   clc
   adc #1
   sta (nptr),Y
+  // seek ahead 1 since we're adding a char
   lda #1
-  sta acoffset
+  sta offsetlo
+  jsr seek2
 acnl:
   ldy #4
   lda (tmptr),Y
-  clc
-  adc acoffset
   sta offsetlo
   iny
   lda (tmptr),Y
-  adc #0
   sta offsethi
 
   lda zpb0
@@ -436,18 +426,13 @@ setbyted:
 
   rts
 
-// there are some scenarios where we end
-// up with a larger number of runs that 
-// there should be.
+// there are some scenarios where we end up with a larger number of runs than there should be.
 // example:
 //   5,A,1,B,10,A
-//   if we change the B to an A, it
-//   will merge with the first and
-//   will become:
+//   if we change the B to an A, it will merge with the first and will become:
 //   6,A,10,A
 //   instead it should be 16A
-// this routine will clean this kind
-// of thing up. 
+// this routine will clean this kind of thing up. 
 compress:
   pha
   tya
@@ -463,6 +448,7 @@ compress:
   sta tmrptr+1
 
 cmprl:
+  // todo this doesn't handle the case where the last run is zero length
   jsr peeknext
   bcs cmprd
 
@@ -476,26 +462,21 @@ cmprl:
   cmp nrb
   bne cmprln
 
-  // if here, the next runbyte
-  // matches and we can copy some
-  // of the run here
+  // if here, the next runbyte  matches and we can copy some  of the run here
   ldy #0
   lda (tmrptr),Y
   clc
   adc nrl
   bcs cmprlw
 
-  // no wrap, absorb next. next run
-  // will get deleted next loop
+  // no wrap, absorb next. next run will get deleted next loop
   sta (tmrptr),Y
   ldy #2
   lda #0
   sta (tmrptr),Y 
   beq cmprln
 cmprlw:
-  // wrapped portion (+1) is new
-  // length of next run. current run
-  // is 255.
+  // wrapped portion (+1) is new length of next run. current run is 255.
   ldy #2
   adc #0 // add the carry 
   sta (tmrptr),Y
@@ -617,8 +598,7 @@ drd:
   pla
   rts
 
-// adds a run after the current
-// with run length 1
+// adds a run after the current with run length 1
 // inputs
 //   newb the run byte
 addrun:
@@ -690,6 +670,7 @@ arld:
   pla
   rts
 
+// inserts a run at the current index
 // inputs
 //   newb the run byte
 //   numb the run length
@@ -849,7 +830,7 @@ peekprevd:
 // outputs
 //   nrunlo/hi is location of next
 //   nrb the byte
-//   C will be set if at end of run
+//   C will be set if at end of runs
 peeknext:
   pha
   tya

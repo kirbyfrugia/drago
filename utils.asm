@@ -1,5 +1,5 @@
 
-// copy one region of memory to another
+// copy one region of memory to another, assumes num bytes > 0
 // inputs
 //   $fb src lo byte
 //   $fc src hi byte
@@ -12,31 +12,29 @@ copy:
   tya
   pha
 
+  ldy #0
+copyl:
+  lda ($fb),y
+  sta ($fd),y
+
+  lda $bb
+  sec
+  sbc #1
+  sta $bb
   lda $bc
-  beq copyr
-copyhi:
-  ldy #$ff
-copyhinb:
-  lda ($fb),y
-  sta ($fd),y
-  dey
-  bne copyhinb
-  lda ($fb),y
-  sta ($fd),y
+  sbc #0
+  sta $bc
+  bne copyln
+  lda $bb
+  bne copyln
+  beq copyld
+copyln:
+  iny
+  bne copyl
   inc $fc
   inc $fe
-  dec $bc
-  lda $bc
-  bne copyhi    
-copyr: //remainder
-  ldy $bb
-  beq copyd
-copyrl:
-  lda ($fb),y
-  sta ($fd),y
-  dey
-  bne copyrl
-copyd:
+  jmp copyl
+copyld:
   pla
   tay
   pla  

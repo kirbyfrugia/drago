@@ -702,8 +702,6 @@ mvmld:
 
 // move map up if possible
 mvmu:
-  lda #6
-  sta tmp0
   lda tmrow0
   bne mvmut
   beq mvmud 
