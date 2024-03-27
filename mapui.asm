@@ -5,6 +5,35 @@
 .var scrrow0   = 2
 .var scrheight = 22
 
+// displays a Yes/No question on the input line with the provided null terminated str, e.g.
+// <str><cursor>
+// branches to nohandler if the user doesn't answer "Y", otherwise will continue onto the line after the macro.
+// modifies Y, zpb0,zpb1
+.macro YesNo (str,nohandler) {
+  lda #<str
+  sta zpb0
+  lda #>str
+  sta zpb1
+  ldy #0
+yesnostr:
+  lda (zpb0),y
+  beq yesnostrd
+  sta $0400,y
+  iny
+  bne yesnostr
+yesnostrd:
+  iny
+yesnoin:
+  // get input
+  jsr $ffe4
+  cmp #89 // Y
+  beq yes
+  cmp #78
+  beq nohandler
+  bne yesnoin
+yes:
+}
+
 cls:
   ldy #0
 clsl:
@@ -177,6 +206,48 @@ copyspr:
   sta $d001 //spr0y
   rts
 
+clearinput:
+  ldy #29
+clinl:
+  lda #emptychr
+  sta $0400,y
+  lda fghclr
+  sta $d800,y
+  dey
+  bpl clinl
+  rts
+
+redrawinput:
+  lda fghclr
+  tax
+  ToZPB(<strnew,>strnew,zpb0)
+  ToZPB($00,$04,zpb2)
+  jsr ps
+  ToZPB($00,$d8,zpb2)
+  jsr cs
+
+  lda #emptychr
+  sta $0405
+  stx $d805
+
+  ToZPB(<strload,>strload,zpb0)
+  ToZPB($06,$04,zpb2)
+  jsr ps
+  ToZPB($06,$d8,zpb2)
+  jsr cs
+
+  lda #emptychr
+  sta $040c
+  stx $d80c
+
+  ToZPB(<strsave,>strsave,zpb0)
+  ToZPB($0d,$04,zpb2)
+  jsr ps
+  ToZPB($0d,$d8,zpb2)
+  jsr cs
+
+  rts
+
 redrawui:
   lda $d021
   and #%00001111
@@ -211,30 +282,14 @@ vbarld:
 
   lda fghclr
   tax
-  ToZPB(<strmapl,>strmapl,zpb0)
-  ToZPB($00,$04,zpb2)
-  jsr ps
-  ToZPB($00,$d8,zpb2)
-  jsr cs
 
-  ToZPB(<strnew,>strnew,zpb0)
+  jsr redrawinput
+
+  ToZPB(<strmapl,>strmapl,zpb0)
   ToZPB($28,$04,zpb2)
   jsr ps
   ToZPB($28,$d8,zpb2)
   jsr cs
-
-  ToZPB(<strload,>strload,zpb0)
-  ToZPB($2d,$04,zpb2)
-  jsr ps
-  ToZPB($2d,$d8,zpb2)
-  jsr cs
-
-  ToZPB(<strsave,>strsave,zpb0)
-  ToZPB($33,$04,zpb2)
-  jsr ps
-  ToZPB($33,$d8,zpb2)
-  jsr cs
-
   
   ToZPB(<strtiles,>strtiles,zpb0)
   ToZPB($1e,$04,zpb2)
@@ -313,8 +368,8 @@ ruil2l:
   //bgclrs, set fg color to indicate
   //multicolor character
   lda #$0f
-  sta 55296+11
-  sta 55296+17
+  sta 55336+11
+  sta 55336+17
 
   //map arrows
   lda #upchr
@@ -352,11 +407,6 @@ ruil2l:
   //upd curs clr
   lda fghclr+1
   sta $d027
-
-  // seems to be required for new
-  // color to take effect...
-  //lda $07f8
-  //sta $07f8
 
   rts
 
@@ -439,7 +489,9 @@ initui:
   jsr emptyscrn
   rts
 
-//load
+//loadmap:
+//  YesNo(strsure,loadd)
+
 //  lda #15
 //  ldx #9
 //  ldy #15
@@ -461,6 +513,7 @@ initui:
 //
 //  jsr $ffd5
 //   
+//loadd:
 //  rts
 
 //save
@@ -715,9 +768,9 @@ injs:
 //   bit 7 - 1 if allow repeats
 // addresses of handlers
 uiss:
-  .byte 4,0,5,1,0,<(bgclrp-1),>(bgclrp-1)
-  .byte 10,0,11,1,0,<(bgclr1p-1),>(bgclr1p-1)
-  .byte 16,0,17,1,0,<(bgclr2p-1),>(bgclr2p-1)
+  .byte 4,1,5,2,0,<(bgclrp-1),>(bgclrp-1)
+  .byte 10,1,11,2,0,<(bgclr1p-1),>(bgclr1p-1)
+  .byte 16,1,17,2,0,<(bgclr2p-1),>(bgclr2p-1)
   .byte 30,15,31,16,0,<(mclrp-1),>(mclrp-1)
   .byte 31,18,32,19,0,<(fgbp-1),>(fgbp-1)
   .byte 35,18,36,19,0,<(bgbp-1),>(bgbp-1)
@@ -737,7 +790,7 @@ uiss:
   .byte 28,24,29,25,128,<(maprp-1),>(maprp-1)
   .byte 31,1,39,5,0,<(tsp-1),>(tsp-1)
   .byte 31,7,39,16,0,<(tep-1),>(tep-1) 
-  .byte 0,1,5,2,128,<(newp-1),>(newp-1)
+  .byte 0,0,5,1,128,<(newp-1),>(newp-1)
 uise:
 
 

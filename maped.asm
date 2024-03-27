@@ -1402,6 +1402,8 @@ delchrpd:
   rts
 
 newp:
+  jsr clearinput
+  YesNo(strsure,newpd)
   lda #3
   sta tmrow0
   lda #0
@@ -1423,6 +1425,9 @@ newpl:
   jsr drawtile
   jsr fgbp
   jsr setbrush
+newpd:
+  jsr clearinput
+  jsr redrawinput
   rts
 
 // in its own subroutine just

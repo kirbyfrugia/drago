@@ -92,9 +92,11 @@ strtif:     .byte 20,9,12,5,9,14,6,15,58,32,0
 //LEVEL:
 strlvlf:    .byte 12,5,22,5,12,58,32,0
 //[NEW]:
-strnew:    .byte 27,14,5,23,29,0
+strnew:     .byte 27,14,5,23,29,0
 //[SAVE]:
 strsave:    .byte 27,19,1,22,5,29,0
 //[LOAD]:
 strload:    .byte 27,12,15,1,4,29,0
+//ARE YOU SURE (Y/N)?
+strsure:    .byte 1,18,5,32,25,15,21,32,19,21,18,5,32,40,25,47,14,41,63,0
            
