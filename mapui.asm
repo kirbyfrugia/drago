@@ -123,32 +123,31 @@ fnsl:
   iny
   bne fnsl
 fnsld:
+  tya
+  clc
+  adc #1
+  sta zpb2 // used to prevent too many del key presses
 
   // show the previous file name if set
   ldx #0
 fnslprev:
-  lda filen,x
+  cpx filenlen
   beq fnslprevd
+  lda filen,x
   jsr petsciitosc
   sta $0400,y
   iny
   inx
   jmp fnslprev
 fnslprevd:
-  tya
-  clc
-  adc #1
-  sta zpb2 // used to prevent too many del key presses
 
   // read in file name
-  ldx #0
 fnslin:
   lda #filledchr
   sta $0400,y
 
   sty filentmp0
   stx filentmp1
-  sty zpb3
   jsr $ffe4 // modifies x,y
   ldy filentmp0
   ldx filentmp1
@@ -700,8 +699,9 @@ loadpt:
   // check for errors
   jsr $ffb7
   and #%10111111
-  bne loaderr
-
+  beq loadok
+  jmp loaderr
+loadok:
   // close the file
   lda #15
   jsr $ffc3
@@ -772,13 +772,7 @@ loadpt:
   // close the file
   lda #15
   jsr $ffc3
-  jmp loadd
-loaderr:
-  jsr error
-  // close the file if it was open...
-  lda #15
-  jsr $ffc3
-loadd:
+
   lda #25
   sta tmrowc
   lda #3
@@ -791,7 +785,14 @@ loadd:
   sta tmcolc
   lda chrtmcolc+1
   sta tmcolc+1
-
+  jmp loadd
+loaderr:
+  jsr error
+  // close the file if it was open...
+  lda #15
+  jsr $ffc3
+  jsr emptyscrn
+loadd:
   jsr updscrn
   jsr drawscrn
   jsr redrawui
