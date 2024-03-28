@@ -835,17 +835,6 @@ tmcol0:     .byte 0,0
 tmcolc:     .byte 0,0
 tmrowc:     .byte 0
 
-// don't change the order of
-// these activetm bytes!
-chrtm:    
-chrtmrun0:    .byte 0,0
-chrtmrunlast: .byte 0,0
-chrtmcolc:    .byte 0,0
-mdtm:    
-mdtmrun0:     .byte 0,0
-mdtmrunlast:  .byte 0,0
-mdtmcolc:     .byte 0,0
-
 // internal vars
 offsetlo:   .byte 0
 offsethi:   .byte 0
@@ -865,3 +854,5 @@ crunrem:   .fill scrheight,0
 mdrunlo:   .fill scrheight,0
 mdrunhi:   .fill scrheight,0
 mdrunrem:  .fill scrheight,0
+
+

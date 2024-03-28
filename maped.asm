@@ -172,10 +172,6 @@ statline:
   rts
 
 redrawmap:
-  lda #<chrtm
-  sta zpb0
-  lda #>chrtm
-  sta zpb1
   jsr drawscrn
   rts
 
@@ -693,7 +689,7 @@ dtilecd:
 // the raw tile data in memory
 // and stores it in zpb2
 rawtile:
-  ToZPB($00,$20,zpb2)
+  ToZPB(<tiles,>tiles,zpb2)
   ldx ctidx
   beq rawtiled
 rawtilel:
@@ -1083,7 +1079,7 @@ mvcdmv:
 mvcdd:
   rts
 
-sclr:
+bgclrs:
   lda $d021
   and #%00001111
   cmp #15
@@ -1096,7 +1092,7 @@ sclrw:
 sclrd:
   rts
 
-bgclr1:
+bgclr1s:
   lda $d022
   and #%00001111
   cmp #15
@@ -1109,7 +1105,7 @@ bgclr1w:
 bgclr1d:
   rts
 
-bgclr2:
+bgclr2s:
   lda $d023
   and #%00001111
   cmp #15
@@ -1143,19 +1139,19 @@ ifgcu:
   rts
 
 bgclrp:
-  jsr sclr
+  jsr bgclrs
   jsr redrawui
   jsr drawtile
   rts
 
 bgclr1p:
-  jsr bgclr1
+  jsr bgclr1s
   jsr redrawui
   jsr drawtile
   rts
 
 bgclr2p:
-  jsr bgclr2
+  jsr bgclr2s
   jsr redrawui
   jsr drawtile
   rts
@@ -1506,7 +1502,6 @@ uifgb:    .byte 0
 uibgb:    .byte 0
 uic1b:    .byte 0
 uic2b:    .byte 0
-tsdata:   .fill 256,0
 
 // set byte char and metadata
 sbchr: .byte 0
@@ -1517,3 +1512,41 @@ sbmd:  .byte 0
 //logtmp1:   .byte 0
 //logtmp2:   .byte 0
 //logtmp3:   .byte 0
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+// this chunk of memory is used for file loading and saving. Do not change
+// the order or size of any of it and don't put anything after it!!!
+//////////////////////////////////////////////////////////////////////////////
+  *=$2000
+filedatas:
+tiles:
+  *=$2800
+tsdata:       .fill 256,0
+chrtm:    
+chrtmrun0:    .byte 0,0
+chrtmrunlast: .byte 0,0
+chrtmcolc:    .byte 0,0
+mdtm:    
+mdtmrun0:     .byte 0,0
+mdtmrunlast:  .byte 0,0
+mdtmcolc:     .byte 0,0
+bgclr:        .byte 0
+bgclr1:       .byte 0
+bgclr2:       .byte 0
+filedatae:
+
+  *=$4000
+chrtmdatas:
+  *=$5fff
+chrtmdatae:
+
+  *=$6000
+mdtmdatas:
+  *=$7fff
+mdtmdatae:
+//////////////////////////////////////////////////////////////////////////////
+// no touchie!!!
+//////////////////////////////////////////////////////////////////////////////
+

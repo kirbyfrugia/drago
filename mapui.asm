@@ -34,6 +34,169 @@ yesnoin:
 yes:
 }
 
+// displays an error based on error in A. Pressing return will continue.
+// modifies A,zpb0-3
+error:
+  pha
+  lda #<strerror
+  sta zpb0
+  lda #>strerror
+  sta zpb1
+  ldy #0
+errstrl:
+  lda (zpb0),Y
+  beq errstrld
+  sta $0400,Y
+  iny
+  bne errstrl
+errstrld:
+
+  lda #$00
+  sta zpb0
+  lda #$04
+  sta zpb1
+  pla
+  jsr loghexit
+  iny
+  lda #emptychr
+  sta $0400,y
+  iny
+
+  tya
+  sta zpb2
+  lda zpb1
+  sta zpb3
+
+  lda #<strcont
+  sta zpb0
+  lda #>strcont
+  sta zpb1
+  ldy #0
+contstrl:
+  lda (zpb0),Y
+  beq contstrld
+  sta (zpb2),Y
+  iny
+  bne contstrl
+contstrld:
+errorin:
+  // get input
+  jsr $ffe4
+  cmp #13
+  bne errorin
+  rts
+
+// converts a screen code to petscii, assuming it's @ : 0-9 A-Z
+// inputs: A
+sctopetscii:
+  cmp #27
+  bcs sctoptd
+
+  clc
+  adc #64
+sctoptd:
+  rts
+
+// converts petscii to a screencode, assuming it's @ : 0-9 A-Z
+// inputs: A
+petsciitosc:
+  cmp #59
+  bcc ptoscd
+
+  // alpha char or @
+  sec
+  sbc #64
+ptoscd:
+  rts
+
+// modifies zpb0,zpb1,zpb2,zpb3,A,Y,X
+filenamein:
+  lda #<strfilen
+  sta zpb0
+  lda #>strfilen
+  sta zpb1
+  ldy #0
+fnsl:
+  lda (zpb0),y
+  beq fnsld
+  sta $0400,y
+  iny
+  bne fnsl
+fnsld:
+
+  // show the previous file name if set
+  ldx #0
+fnslprev:
+  lda filen,x
+  beq fnslprevd
+  jsr petsciitosc
+  sta $0400,y
+  iny
+  inx
+  jmp fnslprev
+fnslprevd:
+  tya
+  clc
+  adc #1
+  sta zpb2 // used to prevent too many del key presses
+
+  // read in file name
+  ldx #0
+fnslin:
+  lda #filledchr
+  sta $0400,y
+
+  sty filentmp0
+  stx filentmp1
+  sty zpb3
+  jsr $ffe4 // modifies x,y
+  ldy filentmp0
+  ldx filentmp1
+  cmp #3
+  beq fnslincancel
+  cmp #13
+  beq fnslinret
+  cmp #20
+  beq fnsldel
+  cmp #48
+  bcc fnslin
+  cmp #59
+  bcc fnslvalid
+  cmp #64
+  bcc fnslin
+  cmp #91
+  bcc fnslvalid
+  bcs fnslin
+fnslvalid:
+  sta filen,x
+  inx
+  jsr petsciitosc
+  sta $0400,y
+  iny
+  jmp fnslin
+fnsldel:
+  cpy zpb2
+  bcc fnslin
+  lda #emptychr
+  sta $0400,y
+  dey
+  dex
+  jmp fnslin
+fnslinret:
+  cpx #0
+  beq fnslincancel
+  stx filenlen
+  lda #0
+  sta filenres
+  jmp fnd
+fnslincancel:
+  ldx #0
+  stx filenlen
+  lda #1
+  sta filenres
+fnd:
+  rts
+
 cls:
   ldy #0
 clsl:
@@ -68,9 +231,9 @@ initchrs:
   lda #$d0
   sta $fc
 
-  lda #$00
+  lda #<tiles
   sta $fd
-  lda #$20
+  lda #>tiles
   sta $fe
   
   lda #$00
@@ -83,18 +246,18 @@ initchrs:
   // reserved and custom chars
   ldy #7
 custl:
-  lda 32*8+$2000,Y //empty
-  sta emptychr*8+$2000,Y
-  lda 66*8+$2000,Y //vbar
-  sta vbarchr*8+$2000,Y
-  lda 81*8+$2000,Y //filled circle
-  sta rbonchr*8+$2000,Y
-  lda 87*8+$2000,Y //empty circle
-  sta rboffchr*8+$2000,Y
-  lda 30*8+$2000,Y //up arrow
-  sta upchr*8+$2000,Y
-  lda 31*8+$2000,Y //left arrow
-  sta lchr*8+$2000,Y
+  lda 32*8+tiles,Y //empty
+  sta emptychr*8+tiles,Y
+  lda 66*8+tiles,Y //vbar
+  sta vbarchr*8+tiles,Y
+  lda 81*8+tiles,Y //filled circle
+  sta rbonchr*8+tiles,Y
+  lda 87*8+tiles,Y //empty circle
+  sta rboffchr*8+tiles,Y
+  lda 30*8+tiles,Y //up arrow
+  sta upchr*8+tiles,Y
+  lda 31*8+tiles,Y //left arrow
+  sta lchr*8+tiles,Y
   dey
   bpl custl
 
@@ -111,30 +274,30 @@ custl2:
 
   ldy #0
   lda #$18
-  sta downchr*8+$2000,Y
-  sta downchr*8+$2000+1,Y
-  sta downchr*8+$2000+2,Y
-  sta downchr*8+$2000+3,Y
-  sta downchr*8+$2000+6,Y
+  sta downchr*8+tiles,Y
+  sta downchr*8+tiles+1,Y
+  sta downchr*8+tiles+2,Y
+  sta downchr*8+tiles+3,Y
+  sta downchr*8+tiles+6,Y
   lda #$7e
-  sta downchr*8+$2000+4,Y
+  sta downchr*8+tiles+4,Y
   lda #$3c
-  sta downchr*8+$2000+5,Y
+  sta downchr*8+tiles+5,Y
   lda #0
-  sta downchr*8+$2000+7,Y
+  sta downchr*8+tiles+7,Y
   
   lda #$0
-  sta rchr*8+$2000
-  sta rchr*8+$2000+7
+  sta rchr*8+tiles
+  sta rchr*8+tiles+7
   lda #$08
-  sta rchr*8+$2000+1
-  sta rchr*8+$2000+6
+  sta rchr*8+tiles+1
+  sta rchr*8+tiles+6
   lda #$0c
-  sta rchr*8+$2000+2
-  sta rchr*8+$2000+5
+  sta rchr*8+tiles+2
+  sta rchr*8+tiles+5
   lda #$fe
-  sta rchr*8+$2000+3
-  sta rchr*8+$2000+4
+  sta rchr*8+tiles+3
+  sta rchr*8+tiles+4
 
   // switch in i/o and restart keyscan interrupt timer
   lda $01
@@ -283,6 +446,7 @@ vbarld:
   lda fghclr
   tax
 
+  jsr clearinput
   jsr redrawinput
 
   ToZPB(<strmapl,>strmapl,zpb0)
@@ -474,112 +638,321 @@ initui:
 
   // todo this isn't enough space
   //first and last run, lo/hi
-  lda #$00
+  lda #<chrtmdatas
   sta chrtmrun0
   sta chrtmrunlast
+  lda #<mdtmdatas
   sta mdtmrun0
   sta mdtmrunlast
-  lda #$40
+  lda #>chrtmdatas
   sta chrtmrun0+1
   sta chrtmrunlast+1
-  lda #$60
+  lda #>mdtmdatas
   sta mdtmrun0+1
   sta mdtmrunlast+1
   
   jsr emptyscrn
   rts
 
-//loadmap:
-//  YesNo(strsure,loadd)
+loadp:
+  jsr clearinput
+  YesNo(strsure,loadpf)
 
-//  lda #15
-//  ldx #9
-//  ldy #15
-//  jsr $ffba
-//
-//  lda #(fntsd-fnts)
-//  ldx #<fnts
-//  ldy #>fnts
-//  jsr $ffbd
-//
-//  lda #$00
-//  sta zpb0
-//  lda #$20
-//  sta zpb1
-//
-//  ldx #$00
-//  ldy #$20
-//  lda #0
-//
-//  jsr $ffd5
-//   
-//loadd:
-//  rts
+  // todo use verify on LOAD to only
+  // save files that changed
+  jsr clearinput
+  jsr filenamein
+  lda filenres
+  beq loadpt
+  jmp loadd
 
-//save
-//  // todo use verify on LOAD to only
-//  // save files that changed
-//
-//  // todo allow other devices
-//  lda #15
-//  ldx #9
-//  ldy #15
-//  jsr $ffba
-//
-//  lda #(fntsd-fnts)
-//  ldx #<fnts
-//  ldy #>fnts
-//  jsr $ffbd
-//
-//  lda #$00
-//  sta zpb0
-//  lda #$20
-//  sta zpb1
-//
-//  ldx #$ff
-//  ldy #$27
-//  lda #zpb0
-//
-//  jsr $ffd8   
-//
-//fnts  .byte 84,83,46,68
-//fntsd .byte 84,83,68,46,68
-//fnchr .byte 67,72,82,46,68
-//fnmd  .byte 77,68,46,68
-//fnmde
-//  rts
+loadpf:
+  jmp loadd
+loadpt:
+  // move the cursor to row 2, column 0
+  ldx #2
+  ldy #0
+  clc
+  jsr $fff0
 
-//settings
-//  lda fghclr
-//  pha
-//  lda #1
-//  sta fghclr
-//  jsr cls
-//  pla
-//  sta fghclr
-//
-//  ToZPB(#<strtsf,#>strtsf,zpb0)
-//  ldy #0
-//stsfl
-//  lda (zpb0),Y
-//  beq stsfld
-//  sta $0400,Y
-//  jsr $ffd2
-//stsfld
-//
-//  jsr $ff
-//bla bhla blah
-//
-//
-//  
-//  
-//  
-//
-//swd
-//  jsr redrawui
-//   
-//  rts
+  // todo allow other devices
+  // set device info
+  lda #15
+  ldx #9
+  ldy #0
+  jsr $ffba
 
+  // load the main file with tileset data, tile info, run info, etc
+  // set the file name
+  lda filenlen
+  ldx #<filen
+  ldy #>filen
+  jsr $ffbd
+
+  // set the start location of the load
+  ldx #<filedatas
+  ldy #>filedatas
+
+  // load the file
+  lda #0
+  jsr $ffd5
+
+  // check for errors
+  jsr $ffb7
+  and #%10111111
+  bne loaderr
+
+  // close the file
+  lda #15
+  jsr $ffc3
+
+
+  // load the char map
+  // set file name, append a "C" to the end of the name
+  ldx filenlen
+  lda #67 // C
+  sta filen,x
+  txa
+  clc
+  adc #1
+  ldx #<filen
+  ldy #>filen
+  jsr $ffbd
+
+  // set the location to load to (x,y)
+  ldy #0
+  lda chrtm,y
+  tax
+  iny
+  lda chrtm,y
+  tay
+
+  // load the file
+  lda #0
+  jsr $ffd5
+
+  // check for errors
+  jsr $ffb7
+  and #%10111111
+  bne loaderr
+
+  // close the file
+  lda #15
+  jsr $ffc3
+
+  // load the metadata map
+  // set file name, append a "C" to the end of the name
+  ldx filenlen
+  lda #77 // M
+  sta filen,x
+  txa
+  clc
+  adc #1
+  ldx #<filen
+  ldy #>filen
+  jsr $ffbd
+
+  // set the location to load to (x,y)
+  ldy #0
+  lda mdtm,y
+  tax
+  iny
+  lda mdtm,y
+  tay
+
+  // load the file
+  lda #0
+  jsr $ffd5
+
+  // check for errors
+  jsr $ffb7
+  and #%10111111
+  bne loaderr
+
+  // close the file
+  lda #15
+  jsr $ffc3
+  jmp loadd
+loaderr:
+  jsr error
+  // close the file if it was open...
+  lda #15
+  jsr $ffc3
+loadd:
+  lda #25
+  sta tmrowc
+  lda #3
+  sta tmrow0
+  lda #0
+  sta tmcol0
+  sta tmcol0+1
+
+  lda chrtmcolc
+  sta tmcolc
+  lda chrtmcolc+1
+  sta tmcolc+1
+
+  jsr updscrn
+  jsr drawscrn
+  jsr redrawui
+  jsr settile
+  jsr drawtile
+  jsr fgbp
+  jsr setbrush
+  rts
+
+
+
+savep:
+  // todo use verify on LOAD to only
+  // save files that changed
+  jsr clearinput
+  jsr filenamein
+  lda filenres
+  beq savept
+  jmp saved
+
+savept:
+  // move the cursor to row 2, column 0
+  ldx #2
+  ldy #0
+  clc
+  jsr $fff0
+
+  // todo allow other devices
+  // set device info
+  lda #15
+  ldx #9
+  ldy #1
+  jsr $ffba
+
+  // save the main file with tileset data, tile info, run info, etc
+
+  // set the file name
+  lda filenlen
+  ldx #<filen
+  ldy #>filen
+  jsr $ffbd
+
+  // set the start location of the save
+  lda #<filedatas
+  sta zpb0
+  lda #>filedatas
+  sta zpb1
+
+  // set the end location of the save
+  ldx #<(filedatae-1)
+  ldy #>(filedatae-1)
+
+  // save the file
+  lda #zpb0
+  jsr $ffd8
+
+  // check for errors
+  jsr $ffb7
+  and #%10111111
+  beq saveok
+  jmp saveerr
+
+saveok:
+  // close the file
+  lda #15
+  jsr $ffc3
+
+  // now save the char map
+  // set file name, append a "C" to the end of the name
+  ldx filenlen
+  lda #67 // C
+  sta filen,x
+  txa
+  clc
+  adc #1
+  ldx #<filen
+  ldy #>filen
+  jsr $ffbd
+
+  // set the start location of the save
+  lda #<chrtmdatas
+  sta zpb0
+  lda #>chrtmdatas
+  sta zpb1
+
+  // set the end location of the save
+  ldy #2
+  lda chrtm,y // last run
+  clc
+  adc #1
+  tax
+  iny
+  lda chrtm,y
+  adc #0
+  tay
+
+  // save the file
+  lda #zpb0
+  jsr $ffd8
+
+  // check for errors
+  jsr $ffb7
+  and #%10111111
+  bne saveerr
+
+  // close the file
+  lda #15
+  jsr $ffc3
+
+  // now save the metadata map
+  // set file name, append a "C" to the end of the name
+  ldx filenlen
+  lda #77 // M
+  sta filen,x
+  txa
+  clc
+  adc #1
+  ldx #<filen
+  ldy #>filen
+  jsr $ffbd
+
+  // set the start location of the save
+  lda #<mdtmdatas
+  sta zpb0
+  lda #>mdtmdatas
+  sta zpb1
+
+  // set the end location of the save
+  ldy #2
+  lda mdtm,y // last run
+  clc
+  adc #1
+  tax
+  iny
+  lda mdtm,y
+  adc #0
+  tay
+
+  // save the file
+  lda #zpb0
+  jsr $ffd8
+
+  // check for errors
+  jsr $ffb7
+  and #%10111111
+  bne saveerr
+
+  // close the file
+  lda #15
+  jsr $ffc3
+  jmp saved
+saveerr:
+  jsr error
+  // close the file if it was open...
+  lda #15
+  jsr $ffc3
+saved:
+  jsr updscrn
+  jsr drawscrn
+  jsr redrawui
+  rts
 
 // inputs
 //  zpb0 x location clicked
@@ -791,6 +1164,8 @@ uiss:
   .byte 31,1,39,5,0,<(tsp-1),>(tsp-1)
   .byte 31,7,39,16,0,<(tep-1),>(tep-1) 
   .byte 0,0,5,1,128,<(newp-1),>(newp-1)
+  .byte 6,0,12,1,128,<(loadp-1),>(loadp-1)
+  .byte 13,0,19,1,128,<(savep-1),>(savep-1)
 uise:
 
 
@@ -824,6 +1199,13 @@ ch:     .byte 4,5,1,5,1,1,5,6,0,0,0,0,0,1,0,0
 
 // fg, h color
 fghclr: .byte 0,0
+
+devnum:    .byte 9
+filen:     .fill 17,0
+filenres:  .byte 0
+filenlen:  .byte 0
+filentmp0: .byte 0
+filentmp1: .byte 0
 
 // file name, ts.d
 //fnts  .byte 84,83,46,68

@@ -83,20 +83,23 @@ strc1c2:    .byte 32,250,3,49,32,250,3,50,0
 strcoll:    .byte 3,15,12,12,9,4,5,0
 // oLoRoToB
 strlrtb:    .byte 32,250,12,250,18,250,20,250,2,0
-//FILE NAMES
-strfn:      .byte 6,9,12,5,32,14,1,13,5,19,0
-//TILESET:
+//TILESET
 strtsf:     .byte 20,9,12,5,19,5,20,58,32,0
-//TILEINFO:
+//TILEINFO
 strtif:     .byte 20,9,12,5,9,14,6,15,58,32,0
-//LEVEL:
-strlvlf:    .byte 12,5,22,5,12,58,32,0
-//[NEW]:
+//[NEW]
 strnew:     .byte 27,14,5,23,29,0
-//[SAVE]:
+//[SAVE]
 strsave:    .byte 27,19,1,22,5,29,0
-//[LOAD]:
+//[LOAD]
 strload:    .byte 27,12,15,1,4,29,0
 //ARE YOU SURE (Y/N)?
 strsure:    .byte 1,18,5,32,25,15,21,32,19,21,18,5,32,40,25,47,14,41,63,0
-           
+//DEV NUM:
+strdevnum:  .byte 4,5,22,32,14,21,13,0
+//FILE NAME:
+strfilen:   .byte 6,9,12,5,32,14,1,13,5,58,0
+//ERROR
+strerror:   .byte 5,18,18,15,18,58,0
+//RETURN TO CONTINUE
+strcont:    .byte 18,5,20,21,18,14,32,20,15,32,3,15,14,20,9,14,21,5,0
