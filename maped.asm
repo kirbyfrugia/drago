@@ -259,6 +259,20 @@ clinl:
   bpl clinl
   rts
 
+// prints a string at zpb0/1 to main input line (first line)
+// modifies Y
+printinput:
+  ldy #0
+pil:
+  lda (zpb0),Y
+  beq pild
+  sta $0400,Y
+  iny
+  bne pil
+pild:
+  rts
+ 
+
 redrawinput:
   lda fghclr
   tax
@@ -2031,52 +2045,56 @@ loadpt:
   clc
   jsr $fff0
 
-  lda fnamelen
-  pha
-
   ldx #9
   stx fdev
 
   // load main data
-  lda #<(filedatas-2)
+  jsr clearinput
+  ToZPB(<strloadm,>strloadm,zpb0)
+  jsr printinput
+  lda #<filedatas
   sta zpb0
-  lda #>(filedatas-2)
+  lda #>filedatas
   sta zpb1 
   jsr fload
   lda fstatus
   bne loaderr
 
-
   // load the char map
+  jsr clearinput
+  ToZPB(<strloadt,>strloadt,zpb0)
+  jsr printinput
   // set file name, append a "C" to the end of the name
   ldx fnamelen
   lda #67 // C
   sta fname,x
 
-  inc fnamelen
-
-  lda #<(chrtmdatas-2)
+  lda #<chrtmdatas
   sta zpb0
-  lda #>(chrtmdatas-2)
+  lda #>chrtmdatas
   sta zpb1 
+  inc fnamelen
   jsr fload
+  dec fnamelen
   lda fstatus
   bne loaderr
 
   // load the metadata map
-  dec fnamelen
+  jsr clearinput
+  ToZPB(<strloadti,>strloadti,zpb0)
+  jsr printinput
   // set file name, append a "M" to the end of the name
   ldx fnamelen
   lda #77 // M
   sta fname,x
 
-  inc fnamelen
-
-  lda #<(mdtmdatas-2)
+  lda #<mdtmdatas
   sta zpb0
-  lda #>(mdtmdatas-2)
+  lda #>mdtmdatas
   sta zpb1 
+  inc fnamelen
   jsr fload
+  dec fnamelen
   lda fstatus
   bne loaderr
 
@@ -2097,9 +2115,8 @@ loaderr:
   jsr error
   jsr emptyscrn
 loadd:
-  pla
-  sta fnamelen
-
+  jsr clearinput
+  jsr redrawinput
   jsr updscrn
   jsr drawscrn
   jsr redrawui
@@ -2127,136 +2144,95 @@ savept:
   clc
   jsr $fff0
 
-  // todo allow other devices
-  // set device info
-  lda #15
-  ldx #9
-  ldy #1
-  jsr $ffba
-
-  // save the main file with tileset data, tile info, run info, etc
-
-  // set the file name
   lda fnamelen
-  ldx #<fname
-  ldy #>fname
-  jsr $ffbd
+  pha
 
-  // set the start location of the save
+  ldx #9
+  stx fdev
+
+  jsr clearinput
+  ToZPB(<strsavem,>strsavem,zpb0)
+  jsr printinput
+  // save main data
   lda #<filedatas
   sta zpb0
   lda #>filedatas
-  sta zpb1
-
-  // set the end location of the save
-  ldx #<(filedatae-1)
-  ldy #>(filedatae-1)
-
-  // save the file
-  lda #zpb0
-  jsr $ffd8
-
-  // check for errors
-  jsr $ffb7
-  and #%10111111
+  sta zpb1 
+  lda #<filedatae
+  sta zpb2
+  lda #>filedatae
+  sta zpb3 
+  jsr fsave
+  lda fstatus
   beq saveok
   jmp saveerr
 
 saveok:
-  // close the file
-  lda #15
-  jsr $ffc3
-
-  // now save the char map
+  jsr clearinput
+  ToZPB(<strsavet,>strsavet,zpb0)
+  jsr printinput
+  // save the char map
   // set file name, append a "C" to the end of the name
   ldx fnamelen
   lda #67 // C
   sta fname,x
-  txa
-  clc
-  adc #1
-  ldx #<fname
-  ldy #>fname
-  jsr $ffbd
 
-  // set the start location of the save
-  lda #<chrtmdatas
+  ldy #0
+  lda chrtm,y
   sta zpb0
-  lda #>chrtmdatas
-  sta zpb1
-
-  // set the end location of the save
-  ldy #2
-  lda chrtm,y // last run
+  iny
+  lda chrtm,y
+  sta zpb1 
+  iny
+  lda chrtm,y
   clc
   adc #1
-  tax
+  sta zpb2
   iny
   lda chrtm,y
   adc #0
-  tay
-
-  // save the file
-  lda #zpb0
-  jsr $ffd8
-
-  // check for errors
-  jsr $ffb7
-  and #%10111111
+  sta zpb3
+  inc fnamelen
+  jsr fsave
+  dec fnamelen
+  lda fstatus
   bne saveerr
 
-  // close the file
-  lda #15
-  jsr $ffc3
-
-  // now save the metadata map
-  // set file name, append a "C" to the end of the name
+  // save the metadata map
+  jsr clearinput
+  ToZPB(<strsaveti,>strsaveti,zpb0)
+  jsr printinput
+  // set file name, append a "M" to the end of the name
   ldx fnamelen
   lda #77 // M
   sta fname,x
-  txa
-  clc
-  adc #1
-  ldx #<fname
-  ldy #>fname
-  jsr $ffbd
 
-  // set the start location of the save
-  lda #<mdtmdatas
+  ldy #0
+  lda mdtm,y
   sta zpb0
-  lda #>mdtmdatas
-  sta zpb1
-
-  // set the end location of the save
-  ldy #2
-  lda mdtm,y // last run
+  iny
+  lda mdtm,y
+  sta zpb1 
+  iny
+  lda mdtm,y
   clc
   adc #1
-  tax
+  sta zpb2
   iny
   lda mdtm,y
   adc #0
-  tay
-
-  // save the file
-  lda #zpb0
-  jsr $ffd8
-
-  // check for errors
-  jsr $ffb7
-  and #%10111111
+  sta zpb3
+  inc fnamelen
+  jsr fsave
+  dec fnamelen
+  lda fstatus
   bne saveerr
-
-  // close the file
-  lda #15
-  jsr $ffc3
-  jmp saved
+  beq saved
 saveerr:
   jsr error
-  // close the file if it was open...
-  lda #15
-  jsr $ffc3
 saved:
+  jsr clearinput
+  jsr redrawinput
   jsr updscrn
   jsr drawscrn
   jsr redrawui

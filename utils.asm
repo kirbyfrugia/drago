@@ -214,7 +214,6 @@ fload:
   // restore default i/o
   jsr $ffcc 
 
-  // load the main file with tileset data, tile info, run info, etc
   // set the file name
   lda fnamelen
   ldx #<fname
@@ -268,6 +267,86 @@ fld:
   // clear all channels
   jsr $ffcc 
   rts
+
+
+// saves a section of memory to a file
+// inputs:
+//   zpb0/zpb1 - start memory location
+//   zpb2/zpb3 - end memory location
+//   fname - load with the name of the file to load
+//   fnamelen - length of file name
+//   fdev - device number
+// outputs:
+//   fstatus - 0 if save successful, error otherwise
+// note: A,X,Y all modified
+fsave:
+  // restore default i/o
+  jsr $ffcc 
+
+  // set the file name
+  lda fnamelen
+  ldx #<fname
+  ldy #>fname
+  jsr $ffbd
+
+  // set device info
+  lda #15
+  ldx fdev
+  ldy #1
+  jsr $ffba
+
+  clc // not sure if necessary, but not sure if $ffc0 sets carry
+  // open the file
+  jsr $ffc0
+  bcs fserr
+  jsr $ffb7
+  bne fserr
+
+  // prepare for output
+  ldx #15
+  jsr $ffc9
+  bcs fserr
+
+  ldy #0
+fsl:
+  lda zpb0
+  cmp zpb2
+  bne fslco
+  lda zpb1
+  cmp zpb3
+  bne fslco
+  beq fssucc
+fslco:
+  lda (zpb0),y
+  jsr $ffd2
+  sta fbyte
+  jsr $ffb7
+  bne fserr
+  lda zpb0
+  clc
+  adc #1
+  sta zpb0
+  lda zpb1
+  adc #0
+  sta zpb1
+  bne fsl
+fssucc:
+  lda #0
+  sta fstatus
+  beq fsd
+fserr:
+  // todo something
+  sta fstatus
+fsd:
+  // close the file
+  lda #15
+  jsr $ffc3
+  // clear all channels
+  jsr $ffcc 
+  rts
+
+
+
 
 fname:     .fill 16,0
 fnamelen:  .byte 0

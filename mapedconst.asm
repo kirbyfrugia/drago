@@ -3,6 +3,21 @@
 .var scrrow0   = 2
 .var scrheight = 22
 
+//plchr     = 243
+//mchr      = 244
+.var lchr      = 245
+.var rchr      = 246
+.var upchr     = 247
+.var downchr   = 248
+.var vbarchr   = 249
+.var rboffchr  = 250
+.var rbonchr   = 251
+.var emptychr  = 252
+.var filledchr = 253
+.var bgclr1chr = 254
+.var bgclr2chr = 255
+
+
 //////////////////////////////////////////////////////////////////////////////
 // warning: these areas of memory are used for file loading and saving.
 // Do not change the order or size of any of it.

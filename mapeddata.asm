@@ -1,19 +1,5 @@
 //mapeddata.asm
 
-//plchr     = 243
-//mchr      = 244
-.var lchr      = 245
-.var rchr      = 246
-.var upchr     = 247
-.var downchr   = 248
-.var vbarchr   = 249
-.var rboffchr  = 250
-.var rbonchr   = 251
-.var emptychr  = 252
-.var filledchr = 253
-.var bgclr1chr = 254
-.var bgclr2chr = 255
-
 sprbox8x8:
   .byte $ff,$00,$00
   .byte $81,$00,$00
@@ -103,3 +89,15 @@ strfname:   .byte 6,9,12,5,32,14,1,13,5,58,0
 strerror:   .byte 5,18,18,15,18,58,0
 //RETURN TO CONTINUE
 strcont:    .byte 18,5,20,21,18,14,32,20,15,32,3,15,14,20,9,14,21,5,0
+//LOADING MAIN FILE...
+strloadm:   .byte 12,15,1,4,9,14,7,32,13,1,9,14,32,6,9,12,5,46,46,46,0
+//LOADING TILES...
+strloadt:   .byte 12,15,1,4,9,14,7,32,20,9,12,5,19,46,46,46,0
+//LOADING TILE INFO...
+strloadti:   .byte 12,15,1,4,9,14,7,32,20,9,12,5,32,9,14,6,15,46,46,46,0
+//LOADING MAIN FILE...
+strsavem:   .byte 19,1,22,9,14,7,32,13,1,9,14,32,6,9,12,5,46,46,46,0
+//LOADING TILES...
+strsavet:   .byte 19,1,22,9,14,7,32,20,9,12,5,19,46,46,46,0
+//LOADING TILE INFO...
+strsaveti:  .byte 19,1,22,9,14,7,32,20,9,12,5,32,9,14,6,15,46,46,46,0
