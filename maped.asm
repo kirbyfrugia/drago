@@ -13,6 +13,7 @@
 .var scrheight = 22
 
 #import "const.asm"
+#import "mapedconst.asm"
 #import "mapeddata.asm"
 #import "mapedutils.asm"
 #import "utils.asm"
@@ -1833,11 +1834,11 @@ maprp:
   sta etime+2
   rts
 mapup:
-  jsr mvmd
+  jsr mvmu
   jsr redraw
   rts
 mapdp:
-  jsr mvmu
+  jsr mvmd
   jsr redraw
   rts
 
@@ -2630,39 +2631,4 @@ filentmp1: .byte 0
 //fnchr .byte 67,72,82,46,68
 //fnmd  .byte 77,68,46,68
 //fnmde
-
-//////////////////////////////////////////////////////////////////////////////
-// this chunk of memory is used for file loading and saving. Do not change
-// the order or size of any of it and don't put anything after it!!!
-//////////////////////////////////////////////////////////////////////////////
-  *=$2000
-filedatas:
-tiles:
-  *=$2800
-tsdata:       .fill 256,0
-chrtm:    
-chrtmrun0:    .byte 0,0
-chrtmrunlast: .byte 0,0
-chrtmcolc:    .byte 0,0
-mdtm:    
-mdtmrun0:     .byte 0,0
-mdtmrunlast:  .byte 0,0
-mdtmcolc:     .byte 0,0
-bgclr:        .byte 0
-bgclr1:       .byte 0
-bgclr2:       .byte 0
-filedatae:
-
-  *=$4000
-chrtmdatas:
-  *=$5fff
-chrtmdatae:
-
-  *=$6000
-mdtmdatas:
-  *=$7fff
-mdtmdatae:
-//////////////////////////////////////////////////////////////////////////////
-// no touchie!!!
-//////////////////////////////////////////////////////////////////////////////
 

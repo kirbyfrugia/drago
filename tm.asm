@@ -39,6 +39,7 @@
 .var corow    = $54
 .var tmvar0   = $55
 .var cused    = $56
+.var fbyte    = $57
 //WARN $59-$60 used by editor 
 
 // tilemap viewer
@@ -742,6 +743,73 @@ s2d:
   pla
   rts
 
+
+// loads a full file, including tileset data, chr tilemap, md tilemap
+// A,X,Y all modified
+// outputs:
+//   filestatus - 0 if load successful
+//dataload:
+//  // todo allow other devices
+//  // set device info
+//  lda #15
+//  ldx #9
+//  ldy #15
+//  jsr $ffba
+//
+//  // load the main file with tileset data, tile info, run info, etc
+//  // set the file name
+//  lda filenlen
+//  ldx #<filen
+//  ldy #>filen
+//  jsr $ffbd
+//
+//  // open the file
+//  jsr $ffc0
+//
+//  jsr $ffb7
+//  and #%10111111
+//  bne dlmlerr
+//
+//  // prepare for input
+//  ldx #15
+//  jsr $ffc6 //chkin
+//
+//  lda #<filedatas
+//  sta zpb0
+//  lda #>filedatas
+//  sta zpb1 
+//
+//  ldy #0
+//dlml:
+//  jsr $ffcf
+//  sta fbyte
+//  jsr $ffb7
+//  cmp #64 // eof
+//  beq dlmlsucc
+//  and #%10111111
+//  bne dlmlerr
+//  lda fbyte
+//  sta (zpb0),y
+//  iny
+//  bne dlml
+//  inc zpb1
+//  bne dlml
+//dlmlsucc:
+//  lda #0
+//  sta filestatus
+//  beq dlmld
+//dlmlerr:
+//  // todo something
+//  lda #1
+//  sta filestatus
+//dlmld:
+//  // close the file
+//  lda #15
+//  jsr $ffc3
+//
+//  rts
+
+
 // API vars
 tmrow0:     .byte 0
 tmcol0:     .byte 0,0
@@ -753,6 +821,8 @@ offsetlo:   .byte 0
 offsethi:   .byte 0
 maxrow0:    .byte 0
 maxcol0:    .byte 0,0
+
+filestatus: .byte 0
 
 // ptrs to upper left of screen
 scrptr0:    .byte 0,0
@@ -767,5 +837,4 @@ crunrem:   .fill scrheight,0
 mdrunlo:   .fill scrheight,0
 mdrunhi:   .fill scrheight,0
 mdrunrem:  .fill scrheight,0
-
 
