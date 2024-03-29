@@ -2144,9 +2144,6 @@ savept:
   clc
   jsr $fff0
 
-  lda fnamelen
-  pha
-
   ldx #9
   stx fdev
 
@@ -2548,10 +2545,4 @@ fnameres:  .byte 0
 fnametmp0: .byte 0
 fnametmp1: .byte 0
 
-// file name, ts.d
-//fnts  .byte 84,83,46,68
-//fntsd .byte 84,83,68,46,68
-//fnchr .byte 67,72,82,46,68
-//fnmd  .byte 77,68,46,68
-//fnmde
 

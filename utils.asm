@@ -309,6 +309,12 @@ fsave:
 
   ldy #0
 fsl:
+  lda (zpb0),y
+  jsr $ffd2
+  sta fbyte
+  jsr $ffb7
+  bne fserr
+
   lda zpb0
   cmp zpb2
   bne fslco
@@ -317,11 +323,6 @@ fsl:
   bne fslco
   beq fssucc
 fslco:
-  lda (zpb0),y
-  jsr $ffd2
-  sta fbyte
-  jsr $ffb7
-  bne fserr
   lda zpb0
   clc
   adc #1
