@@ -748,66 +748,66 @@ s2d:
 // A,X,Y all modified
 // outputs:
 //   filestatus - 0 if load successful
-//dataload:
-//  // todo allow other devices
-//  // set device info
-//  lda #15
-//  ldx #9
-//  ldy #15
-//  jsr $ffba
-//
-//  // load the main file with tileset data, tile info, run info, etc
-//  // set the file name
-//  lda filenlen
-//  ldx #<filen
-//  ldy #>filen
-//  jsr $ffbd
-//
-//  // open the file
-//  jsr $ffc0
-//
-//  jsr $ffb7
-//  and #%10111111
-//  bne dlmlerr
-//
-//  // prepare for input
-//  ldx #15
-//  jsr $ffc6 //chkin
-//
-//  lda #<filedatas
-//  sta zpb0
-//  lda #>filedatas
-//  sta zpb1 
-//
-//  ldy #0
-//dlml:
-//  jsr $ffcf
-//  sta fbyte
-//  jsr $ffb7
-//  cmp #64 // eof
-//  beq dlmlsucc
-//  and #%10111111
-//  bne dlmlerr
-//  lda fbyte
-//  sta (zpb0),y
-//  iny
-//  bne dlml
-//  inc zpb1
-//  bne dlml
-//dlmlsucc:
-//  lda #0
-//  sta filestatus
-//  beq dlmld
-//dlmlerr:
-//  // todo something
-//  lda #1
-//  sta filestatus
-//dlmld:
-//  // close the file
-//  lda #15
-//  jsr $ffc3
-//
-//  rts
+dataload:
+  // todo allow other devices
+  // set device info
+  lda #15
+  ldx #9
+  ldy #15
+  jsr $ffba
+
+  // load the main file with tileset data, tile info, run info, etc
+  // set the file name
+  lda filenlen
+  ldx #<filen
+  ldy #>filen
+  jsr $ffbd
+
+  // open the file
+  jsr $ffc0
+
+  jsr $ffb7
+  and #%10111111
+  bne dlmlerr
+
+  // prepare for input
+  ldx #15
+  jsr $ffc6 //chkin
+
+  lda #<filedatas
+  sta zpb0
+  lda #>filedatas
+  sta zpb1 
+
+  ldy #0
+dlml:
+  jsr $ffcf
+  sta fbyte
+  jsr $ffb7
+  cmp #64 // eof
+  beq dlmlsucc
+  and #%10111111
+  bne dlmlerr
+  lda fbyte
+  sta (zpb0),y
+  iny
+  bne dlml
+  inc zpb1
+  bne dlml
+dlmlsucc:
+  lda #0
+  sta filestatus
+  beq dlmld
+dlmlerr:
+  // todo something
+  lda #1
+  sta filestatus
+dlmld:
+  // close the file
+  lda #15
+  jsr $ffc3
+
+  rts
 
 
 // API vars

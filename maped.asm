@@ -7,11 +7,6 @@
 
   jmp init
 
-.var scrcol0   = 0
-.var scrwidth  = 29
-.var scrrow0   = 2
-.var scrheight = 22
-
 #import "const.asm"
 #import "mapedconst.asm"
 #import "mapeddata.asm"
@@ -21,6 +16,10 @@
 #import "tme.asm"
 
 init:
+  // switch out basic
+  lda $01
+  and #%11111110
+  sta $01
 
   lda #0
   sta cursx

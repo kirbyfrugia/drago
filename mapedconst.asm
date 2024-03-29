@@ -1,3 +1,7 @@
+.var scrcol0   = 0
+.var scrwidth  = 29
+.var scrrow0   = 2
+.var scrheight = 22
 
 //////////////////////////////////////////////////////////////////////////////
 // warning: these areas of memory are used for file loading and saving.
