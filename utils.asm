@@ -200,3 +200,78 @@ csld:
   pla
   rts
  
+
+// loads a file into memory
+// inputs:
+//   zpb0/zpb1 - location to load file
+//   fname - load with the name of the file to load
+//   fnamelen - length of file name
+//   fdev - device number
+// outputs:
+//   fstatus - 0 if load successful, error otherwise
+// note: A,X,Y all modified
+fload:
+  // restore default i/o
+  jsr $ffcc 
+
+  // load the main file with tileset data, tile info, run info, etc
+  // set the file name
+  lda fnamelen
+  ldx #<fname
+  ldy #>fname
+  jsr $ffbd
+
+  // set device info
+  lda #15
+  ldx fdev
+  ldy #0
+  jsr $ffba
+
+  clc // not sure if necessary, but not sure if $ffc0 sets carry
+  // open the file
+  jsr $ffc0
+  bcs flerr
+  jsr $ffb7
+  bne flerr
+
+  // prepare for input
+  ldx #15
+  jsr $ffc6 //chkin
+  bcs flerr
+
+  ldy #0
+fll:
+  jsr $ffcf
+  sta fbyte
+  jsr $ffb7
+  cmp #64 // eof
+  beq flsucc
+  and #%10111111
+  bne flerr
+  lda fbyte
+  sta (zpb0),y
+  iny
+  bne fll
+  inc zpb1
+  bne fll
+flsucc:
+  lda #0
+  sta fstatus
+  beq fld
+flerr:
+  // todo something
+  sta fstatus
+fld:
+  // close the file
+  lda #15
+  jsr $ffc3
+  // clear all channels
+  jsr $ffcc 
+  rts
+
+fname:     .fill 16,0
+fnamelen:  .byte 0
+fdev:      .byte 0
+fbyte:     .byte 0
+fstatus:   .byte 0
+

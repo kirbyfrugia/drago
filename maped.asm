@@ -1924,10 +1924,10 @@ gettm:
   rts
 
 // modifies zpb0,zpb1,zpb2,zpb3,A,Y,X
-filenamein:
-  lda #<strfilen
+fnamein:
+  lda #<strfname
   sta zpb0
-  lda #>strfilen
+  lda #>strfname
   sta zpb1
   ldy #0
 fnsl:
@@ -1945,9 +1945,9 @@ fnsld:
   // show the previous file name if set
   ldx #0
 fnslprev:
-  cpx filenlen
+  cpx fnamelen
   beq fnslprevd
-  lda filen,x
+  lda fname,x
   jsr petsciitosc
   sta $0400,y
   iny
@@ -1960,11 +1960,11 @@ fnslin:
   lda #filledchr
   sta $0400,y
 
-  sty filentmp0
-  stx filentmp1
+  sty fnametmp0
+  stx fnametmp1
   jsr $ffe4 // modifies x,y
-  ldy filentmp0
-  ldx filentmp1
+  ldy fnametmp0
+  ldx fnametmp1
   cmp #3
   beq fnslincancel
   cmp #13
@@ -1981,7 +1981,7 @@ fnslin:
   bcc fnslvalid
   bcs fnslin
 fnslvalid:
-  sta filen,x
+  sta fname,x
   inx
   jsr petsciitosc
   sta $0400,y
@@ -1998,15 +1998,15 @@ fnsldel:
 fnslinret:
   cpx #0
   beq fnslincancel
-  stx filenlen
+  stx fnamelen
   lda #0
-  sta filenres
+  sta fnameres
   jmp fnd
 fnslincancel:
   ldx #0
-  stx filenlen
+  stx fnamelen
   lda #1
-  sta filenres
+  sta fnameres
 fnd:
   rts
 
@@ -2017,8 +2017,8 @@ loadp:
   // todo use verify on LOAD to only
   // save files that changed
   jsr clearinput
-  jsr filenamein
-  lda filenres
+  jsr fnamein
+  lda fnameres
   beq loadpt
   jmp loadd
 
@@ -2031,104 +2031,54 @@ loadpt:
   clc
   jsr $fff0
 
-  // todo allow other devices
-  // set device info
-  lda #15
+  lda fnamelen
+  pha
+
   ldx #9
-  ldy #0
-  jsr $ffba
+  stx fdev
 
-  // load the main file with tileset data, tile info, run info, etc
-  // set the file name
-  lda filenlen
-  ldx #<filen
-  ldy #>filen
-  jsr $ffbd
-
-  // set the start location of the load
-  ldx #<filedatas
-  ldy #>filedatas
-
-  // load the file
-  lda #0
-  jsr $ffd5
-
-  // check for errors
-  jsr $ffb7
-  and #%10111111
-  beq loadok
-  jmp loaderr
-loadok:
-  // close the file
-  lda #15
-  jsr $ffc3
+  // load main data
+  lda #<(filedatas-2)
+  sta zpb0
+  lda #>(filedatas-2)
+  sta zpb1 
+  jsr fload
+  lda fstatus
+  bne loaderr
 
 
   // load the char map
   // set file name, append a "C" to the end of the name
-  ldx filenlen
+  ldx fnamelen
   lda #67 // C
-  sta filen,x
-  txa
-  clc
-  adc #1
-  ldx #<filen
-  ldy #>filen
-  jsr $ffbd
+  sta fname,x
 
-  // set the location to load to (x,y)
-  ldy #0
-  lda chrtm,y
-  tax
-  iny
-  lda chrtm,y
-  tay
+  inc fnamelen
 
-  // load the file
-  lda #0
-  jsr $ffd5
-
-  // check for errors
-  jsr $ffb7
-  and #%10111111
+  lda #<(chrtmdatas-2)
+  sta zpb0
+  lda #>(chrtmdatas-2)
+  sta zpb1 
+  jsr fload
+  lda fstatus
   bne loaderr
-
-  // close the file
-  lda #15
-  jsr $ffc3
 
   // load the metadata map
-  // set file name, append a "C" to the end of the name
-  ldx filenlen
+  dec fnamelen
+  // set file name, append a "M" to the end of the name
+  ldx fnamelen
   lda #77 // M
-  sta filen,x
-  txa
-  clc
-  adc #1
-  ldx #<filen
-  ldy #>filen
-  jsr $ffbd
+  sta fname,x
 
-  // set the location to load to (x,y)
-  ldy #0
-  lda mdtm,y
-  tax
-  iny
-  lda mdtm,y
-  tay
+  inc fnamelen
 
-  // load the file
-  lda #0
-  jsr $ffd5
-
-  // check for errors
-  jsr $ffb7
-  and #%10111111
+  lda #<(mdtmdatas-2)
+  sta zpb0
+  lda #>(mdtmdatas-2)
+  sta zpb1 
+  jsr fload
+  lda fstatus
   bne loaderr
-
-  // close the file
-  lda #15
-  jsr $ffc3
 
   lda #25
   sta tmrowc
@@ -2145,11 +2095,11 @@ loadok:
   jmp loadd
 loaderr:
   jsr error
-  // close the file if it was open...
-  lda #15
-  jsr $ffc3
   jsr emptyscrn
 loadd:
+  pla
+  sta fnamelen
+
   jsr updscrn
   jsr drawscrn
   jsr redrawui
@@ -2165,8 +2115,8 @@ savep:
   // todo use verify on LOAD to only
   // save files that changed
   jsr clearinput
-  jsr filenamein
-  lda filenres
+  jsr fnamein
+  lda fnameres
   beq savept
   jmp saved
 
@@ -2187,9 +2137,9 @@ savept:
   // save the main file with tileset data, tile info, run info, etc
 
   // set the file name
-  lda filenlen
-  ldx #<filen
-  ldy #>filen
+  lda fnamelen
+  ldx #<fname
+  ldy #>fname
   jsr $ffbd
 
   // set the start location of the save
@@ -2219,14 +2169,14 @@ saveok:
 
   // now save the char map
   // set file name, append a "C" to the end of the name
-  ldx filenlen
+  ldx fnamelen
   lda #67 // C
-  sta filen,x
+  sta fname,x
   txa
   clc
   adc #1
-  ldx #<filen
-  ldy #>filen
+  ldx #<fname
+  ldy #>fname
   jsr $ffbd
 
   // set the start location of the save
@@ -2261,14 +2211,14 @@ saveok:
 
   // now save the metadata map
   // set file name, append a "C" to the end of the name
-  ldx filenlen
+  ldx fnamelen
   lda #77 // M
-  sta filen,x
+  sta fname,x
   txa
   clc
   adc #1
-  ldx #<filen
-  ldy #>filen
+  ldx #<fname
+  ldy #>fname
   jsr $ffbd
 
   // set the start location of the save
@@ -2618,11 +2568,9 @@ ch:     .byte 4,5,1,5,1,1,5,6,0,0,0,0,0,1,0,0
 fghclr: .byte 0,0
 
 devnum:    .byte 9
-filen:     .fill 17,0
-filenres:  .byte 0
-filenlen:  .byte 0
-filentmp0: .byte 0
-filentmp1: .byte 0
+fnameres:  .byte 0
+fnametmp0: .byte 0
+fnametmp1: .byte 0
 
 // file name, ts.d
 //fnts  .byte 84,83,46,68

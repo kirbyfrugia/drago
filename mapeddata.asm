@@ -98,7 +98,7 @@ strsure:    .byte 1,18,5,32,25,15,21,32,19,21,18,5,32,40,25,47,14,41,63,0
 //DEV NUM:
 strdevnum:  .byte 4,5,22,32,14,21,13,0
 //FILE NAME:
-strfilen:   .byte 6,9,12,5,32,14,1,13,5,58,0
+strfname:   .byte 6,9,12,5,32,14,1,13,5,58,0
 //ERROR
 strerror:   .byte 5,18,18,15,18,58,0
 //RETURN TO CONTINUE
