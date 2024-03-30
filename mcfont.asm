@@ -1,29 +1,3 @@
-
-sprbox8x8:
-  .byte $ff,$00,$00
-  .byte $81,$00,$00
-  .byte $81,$00,$00
-  .byte $81,$00,$00
-  .byte $81,$00,$00
-  .byte $81,$00,$00
-  .byte $81,$00,$00
-  .byte $ff,$00,$00
-  .byte $00,$00,$00
-  .byte $00,$00,$00
-  .byte $00,$00,$00
-  .byte $00,$00,$00
-  .byte $00,$00,$00
-  .byte $00,$00,$00
-  .byte $00,$00,$00
-  .byte $00,$00,$00
-  .byte $00,$00,$00
-  .byte $00,$00,$00
-  .byte $00,$00,$00
-  .byte $00,$00,$00
-  .byte $00,$00,$00
-  .byte $00
-
-
 font.s:
   .byte $ff,$ff,$ff,$ff ;filled char
   .byte $ff,$ff,$ff,$ff

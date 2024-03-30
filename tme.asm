@@ -921,7 +921,8 @@ emptyscrn:
   sta (chrptr),Y
   sta (mdptr),Y
 
-  lda #emptychr
+  // #emptychr
+  lda #252
   ldy #1
   sta (chrptr),Y
   ldy #3

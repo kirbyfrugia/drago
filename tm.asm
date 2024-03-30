@@ -619,8 +619,6 @@ mvmu:
   bne mvmut
   beq mvmud 
 mvmut:
-  lda #7
-  sta tmp0
   lda tmrow0
   sec
   sbc #1

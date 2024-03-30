@@ -2039,12 +2039,6 @@ loadp:
 loadpf:
   jmp loadd
 loadpt:
-  // move the cursor to row 2, column 0
-  ldx #2
-  ldy #0
-  clc
-  jsr $fff0
-
   ldx #9
   stx fdev
 
@@ -2126,8 +2120,6 @@ loadd:
   jsr setbrush
   rts
 
-
-
 savep:
   // todo use verify on LOAD to only
   // save files that changed
@@ -2138,12 +2130,6 @@ savep:
   jmp saved
 
 savept:
-  // move the cursor to row 2, column 0
-  ldx #2
-  ldy #0
-  clc
-  jsr $fff0
-
   ldx #9
   stx fdev
 
