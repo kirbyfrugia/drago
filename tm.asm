@@ -41,27 +41,6 @@
 .var cused    = $56
 //WARN $59-$60 used by editor 
 
-// tilemap viewer
-// INIT
-//   make sure screen info is set
-//     row0,col0,width,height
-//
-// API
-//
-// DATA
-//
-//   render info
-//     tmrow0 1 byte,1st visible
-//            row on screen
-//     tmcol0 2 bytes,1st visible
-//            column on screen
-//
-//   tilemap data structure:
-//     (0,1)   run ptr
-//     (2,3)   last run ptr
-//     (4,5)   col count
-//   * all 16bit nums lo byte first
-
 // modifies A and Y
 .macro NextRun(runptr) {
   lda runptr
@@ -73,19 +52,6 @@
 nrd:
   ReadRun(runptr)
 }
-
-// // modifies A and Y
-// // @P1 run ptr
-// PREVR2 MACRO
-//   lda @P1
-//   sec
-//   sbc #2
-//   sta @P1
-//   bcs pr2d@$MC
-//   dec @P1+1
-// pr2d@$MC
-//   ReadRun(@P1)
-//   ENDM
 
 // modifies A and Y
 .macro ReadRun(runptr) {
@@ -321,6 +287,11 @@ dsd:
   pla
   tay
   pla 
+  rts
+
+scrollr:
+  rts
+scrolll:
   rts
 
 //move map right if possible
@@ -746,6 +717,7 @@ tmrow0:     .byte 0
 tmcol0:     .byte 0,0
 tmcolc:     .byte 0,0
 tmrowc:     .byte 0
+scrollx:    .byte 0
 
 // internal vars
 offsetlo:   .byte 0

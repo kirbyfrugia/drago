@@ -10,7 +10,6 @@
 
   *=$8000 "Drago"
 
-// program addresses
 .var hvzero    = 127
 .var maxhvl    = 88
 .var maxhvr    = 166
@@ -53,13 +52,6 @@ init:
   sta p1lx+1
   sta p1gy+1
   sta p1ly+1
-  //sta p1vv
-  //sta p1tvv
-  //sta p1vh
-  //sta p1tvh
-  //sta p1vdir
-  //sta p1x
-  //sta p1y
 
   lda #hvzero
   sta p1hvi
@@ -140,6 +132,11 @@ initsys:
   //bgclr2
   lda #12
   sta $d023 
+
+  // enable smooth scrolling
+  lda $d016
+  and #%11110111
+  sta $d016
 
   rts
 
@@ -361,6 +358,37 @@ redraw:
   rts
 
 
+// How player velocity and positioning works.
+// Velocity
+//   There are two velocities: indexed velocity and actual velocity.
+//     indexed velocity is a value from 0 to 255, unsigned.
+//       0 is moving top speed to the left, 255 is top to the right, 127 is zero speed.
+//     actual velocity is a signed value calculated by subtracting 127 from the indexed velocity.
+//       the actual velocity is used when updating the player's position.
+//   Player input determines target indexed velocity, which is either 0,127, or 255.
+// Acceleration
+//   If the player is moving one direction and is changing directions, then accel/decel
+//     rate is higher.
+// Position 
+//   Player position is calculated by adding the current position to the actual velocity.
+//     Global position is a 16 bit number stored in p1gx/+1.
+// The 3 least significant bits of the actual velocity and position are fractional
+//   and are truncated when updating the sprite's actual position on the screen.
+//   This allows smoother movement, acceleration, etc.
+// Key variables:
+//   p1hvi - horiz vel,indexed
+//   p1hva - horiz vel,actual
+//   p1gx  - global xpos
+//   p1lx  - local xpos
+//   p1vvi - vert vel,indexed
+//   p1vva - vert vel,actual
+//   p1gy  - global ypos
+//   p1ly  - local ypos
+//   p1hvt - horiz target vel
+//   p1vvt - vert target vel
+//   maxhvl - max velocity when moving left
+//   maxhvr - max velocity when moving right
+
 updp1v:
   lda ebl
   and #%00000001
@@ -411,6 +439,7 @@ updp1vd:
   sta p1hva+1
   rts
   
+
 updp1p:
   clc
   lda p1gx
@@ -461,33 +490,24 @@ gettime:
 // data area
 minx:        .byte 0,0
 maxx:        .byte 0,0
-scrollx:     .byte 0,0
 miny:        .byte 0,0
 maxy:        .byte 0,0
-scrolly:     .byte 0,0
 ptime:       .byte 0,0,0
 etime:       .byte 0,0,0
 time:        .byte 0,0,0
 
-p1hvi:       .byte 0   //horiz vel,indexed
-p1hva:       .byte 0,0 //horiz vel,actual
-p1gx:        .byte 0,0 //global xpos
-p1lx:        .byte 0,0 //local xpos
-p1vvi:       .byte 0   //vert vel,indexed
-p1vva:       .byte 0,0 //vert vel,actual
-p1gy:        .byte 0,0 //global ypos
-p1ly:        .byte 0,0 //local ypos
-p1hvt:       .byte 0   //horiz target vel
+p1hvi:       .byte 0
+p1hva:       .byte 0,0
+p1gx:        .byte 0,0
+p1lx:        .byte 0,0
+p1vvi:       .byte 0
+p1vva:       .byte 0,0
+p1gy:        .byte 0,0
+p1ly:        .byte 0,0
+p1hvt:       .byte 0
 p1vvt:       .byte 0
 
-//p1vv       .byte 0
-//p1tvv      .byte 0
-//p1vh       .byte 0
-//p1tvh      .byte 0
-//p1vdir     .byte 0
-//p1x        .byte 0,0
-//p1y        .byte 0,0
-// event buffers for each key
+// event buffers for each jostick press
 ebl:       .byte 0
 ebr:       .byte 0
 ebu:       .byte 0
