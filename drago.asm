@@ -190,7 +190,7 @@ loadmap:
 
   ldy #0
 lml:
-  lda strlevel1,y
+  lda strlevel2,y
   beq lmld
   sta fname,y
   iny
