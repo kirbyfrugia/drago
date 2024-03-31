@@ -36,10 +36,13 @@
 .var scrptr  = $52 //and $53
 .var clrptr  = $3f //and $40
 
-.var corow    = $54
-.var tmvar0   = $55
-.var cused    = $56
-//WARN $59-$60 used by editor 
+.var tmvar0       = $54
+.var cused        = $55
+.var scrollx      = $56
+.var scrollreg    = $57
+.var scrolloffset = $58
+.var mapmoved     = $59
+//WARN $5a-$60 used by editor 
 
 // modifies A and Y
 .macro NextRun(runptr) {
@@ -289,9 +292,103 @@ dsd:
   pla 
   rts
 
-scrollr:
-  rts
+// affects A,X,Y
+// inputs:
+//   scrollx - the amount to scroll
+// outputs:
+//   scrollx - the amount actually scrolled
 scrolll:
+  ldx scrollx
+  lda #0
+  sta scrollx
+  cpx #0
+  beq sld
+sll:
+  lda scrolloffset
+  clc
+  adc #1
+  cmp #8
+  beq slredraw
+  sta scrolloffset
+  dec scrollreg
+  lda $d016
+  and #%11110000
+  ora scrollreg
+  sta $d016
+  jmp slln
+slredraw:  
+  lda tmcol0+1
+  cmp maxcol0+1
+  bcc slredrawok
+  lda tmcol0
+  cmp maxcol0
+  bcc slredrawok
+  bcs sld
+slredrawok:
+  lda #0
+  sta scrolloffset
+  lda #%00000111
+  sta scrollreg
+  lda $d016
+  ora #%00000111
+  sta $d016
+
+  stx tmvar0
+  jsr mvmlt
+  ldx tmvar0
+slln:
+  inc scrollx
+  dex
+  bne sll
+sld:
+  rts
+
+// affects A,X,Y
+// inputs:
+//   scrollx - the amount to scroll
+// outputs:
+//   scrollx - the amount actually scrolled
+scrollr:
+  ldx scrollx
+  lda #0
+  sta scrollx
+  cpx #0
+  beq sld
+srl:
+  lda scrolloffset
+  sec
+  sbc #1
+  bmi srredraw
+  sta scrolloffset
+  inc scrollreg
+  lda $d016
+  and #%11110000
+  ora scrollreg
+  sta $d016
+  jmp srln
+srredraw:  
+  lda tmcol0
+  bne srredrawok
+  lda tmcol0+1
+  bne srredrawok
+  beq srd
+srredrawok:
+  lda #7
+  sta scrolloffset
+  lda #%00000000
+  sta scrollreg
+  lda $d016
+  and #%11111000
+  sta $d016
+
+  stx tmvar0
+  jsr mvmrt
+  ldx tmvar0
+srln:
+  inc scrollx
+  dex
+  bne srl
+srd:
   rts
 
 //move map right if possible
@@ -300,8 +397,12 @@ mvmr:
   bne mvmrt
   lda tmcol0+1
   bne mvmrt
+  lda #1
+  sta mapmoved
   jmp mvmrd 
 mvmrt:
+  lda #0
+  sta mapmoved
   lda scrptr0
   sta scrptr
   lda scrptr0+1
@@ -449,8 +550,12 @@ mvml:
   lda tmcol0
   cmp maxcol0
   bcc mvmlt
+  lda #1
+  sta mapmoved
   jmp mvmld
 mvmlt:
+  lda #0
+  sta mapmoved
   lda scrptr0
   sta scrptr
   lda scrptr0+1
@@ -614,6 +719,7 @@ mvmdd:
   jsr updscrn
   rts
 
+// todo: move this to tme.asm
 // outputs
 //   offsetlo/hi the number of 
 //   characters from zpb2/3
@@ -717,13 +823,13 @@ tmrow0:     .byte 0
 tmcol0:     .byte 0,0
 tmcolc:     .byte 0,0
 tmrowc:     .byte 0
-scrollx:    .byte 0
 
 // internal vars
 offsetlo:   .byte 0
 offsethi:   .byte 0
 maxrow0:    .byte 0
 maxcol0:    .byte 0,0
+corow:      .byte 0
 
 // ptrs to upper left of screen
 scrptr0:    .byte 0,0

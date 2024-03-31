@@ -1,9 +1,9 @@
 //tme.s
 
 // tilemap edit routines
-.var tmptr  = $59 // and $5a
-.var pptr   = $5b // and $5c
-.var nptr   = $5d // and $5e
+.var tmptr  = $5a // and $5b
+.var pptr   = $5c // and $5d
+.var nptr   = $5e // and $5f
 
 // indirectly writes a value @P1 at the
 // location of @P2 offset by @P3. A and 

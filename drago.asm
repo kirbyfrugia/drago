@@ -1,13 +1,3 @@
- 
-
-
- 
-// todo make sure that we are turning off interrupts when loading new chars!
-
-
-
-
-
   *=$8000 "Drago"
 
 .var hvzero    = 127
@@ -52,6 +42,7 @@ init:
   sta p1lx+1
   sta p1gy+1
   sta p1ly+1
+  sta scrolloffset
 
   lda #hvzero
   sta p1hvi
@@ -87,8 +78,9 @@ loop:
   lda $dc00
   jsr injs
   jsr updp1v
+  //jsr updp1p
   jsr updp1p
-  jsr log
+  //jsr log
   jmp loop
 
 cls:
@@ -133,9 +125,14 @@ initsys:
   lda #12
   sta $d023 
 
-  // enable smooth scrolling
+  lda #0
+  sta scrolloffset
+  lda #%00000111
+  sta scrollreg
+
   lda $d016
-  and #%11110111
+  and #%11110000 // enable smooth scrolling
+  ora scrollreg  // set initial scroll
   sta $d016
 
   rts
@@ -266,6 +263,34 @@ loaderr:
 loadd:
   jsr updscrn
   jsr drawscrn
+
+  lda tmcolc
+  sec
+  sbc #2
+  sta maxp1px
+  lda tmcolc+1
+  sbc #0
+  sta maxp1px+1
+
+  // multiply by 24 to go from column count to pixels
+  // and then shift 3 more to the left to remove fractional portion
+  lda maxp1px
+  rol maxp1px
+  rol maxp1px+1
+  rol maxp1px
+  rol maxp1px+1
+  rol maxp1px
+  rol maxp1px+1
+  rol maxp1px
+  rol maxp1px+1
+  rol maxp1px
+  rol maxp1px+1
+  rol maxp1px
+  rol maxp1px+1
+  lda maxp1px
+  and #%11000000
+  sta maxp1px
+
   rts
 
 
@@ -276,7 +301,7 @@ log:
   lda #$04
   sta zpb1
 
-  ldy #26
+  ldy #1
 
   lda p1gx+1
   jsr loghexit
@@ -300,13 +325,45 @@ log:
   lda p1hva
   jsr loghexit
 
+  iny
+  iny
+  lda tmcol0+1
+  jsr loghexit
+  iny
+  lda tmcol0
+  jsr loghexit
+  iny
+  lda #43
+  sta (zpb0),y
+  iny
+  lda scrolloffset
+  jsr loghexit
+
+  iny
+  iny
+  lda scrollreg
+  jsr loghexit
+
+  iny
+  iny
+  lda scrollx
+  jsr loghexit
+
+  iny
+  iny
+  lda $d010
+  jsr loghexit
+  iny
+  lda $d000
+  jsr loghexit
+
   // next row
   lda #$28
   sta zpb0
   lda #$04
   sta zpb1
 
-  ldy #26
+  ldy #1
 
   lda p1gy+1
   jsr loghexit
@@ -438,11 +495,10 @@ updp1vd:
   sbc #0
   sta p1hva+1
   rts
-  
 
 updp1p:
-  clc
   lda p1gx
+  clc
   adc p1hva
   sta p1gx  
   sta zpb0
@@ -452,6 +508,45 @@ updp1p:
   sta p1gx+1
   sta zpb1
 
+  bmi updp1pneg
+
+  cmp maxp1px+1
+  bcc updp1pt
+  lda zpb0
+  cmp maxp1px
+  bcc updp1pt
+  // if here, moved past right edge of screen
+
+  lda #0
+  sta p1hva
+  lda #hvzero
+  sta p1hvi
+
+  lda maxp1px
+  sta p1gx
+  lda maxp1px+1
+  sta p1gx+1
+  lda #71
+  sta $d000
+  lda $d010
+  ora #%00000001
+  sta $d010
+  jmp updp1pd
+updp1pneg:
+  // move would have moved char to left of level
+  lda #0
+  sta p1gx
+  sta p1gx+1
+  sta p1hva
+
+  lda #hvzero
+  sta p1hvi
+
+  lda #31
+  sta $d000
+  jmp updp1pd
+
+updp1pt:
   clc
   ror zpb1
   ror zpb0
@@ -459,9 +554,127 @@ updp1p:
   ror zpb0
   ror zpb1
   ror zpb0
+  lda zpb1
+  and #%00011111
+  sta zpb1
+
+  // zpb0/zpb1 now contain actual position with fractional part truncated
+  // sprite position is (trunc position + 31) - (tmcol0 + scroll offset)
+
+  // todo:
+  //   calculate expected sprite position
+  //   if (>100 and <200) {
+  //     update sprite position
+  //   }
+  //   if (expected < 100) {
+  //     scroll right up to (100 - expected)
+  //     calculate (expected sprite position - actual sprite position)
+  //     add difference to sprite position
+  //     update sprite position
+  //   }
+  //   if (expected > 200) {
+  //     scroll left up to (expected - 200)
+  //     calculate (expected sprite position - actual sprite position)
+  //     subtract difference to sprite position
+  //     update sprite position
+  //   }
+
   lda zpb0
-  sta $d000 //spr0x
-  
+  clc
+  adc #31
+  sta zpb0
+  lda zpb1
+  adc #0
+  sta zpb1
+
+  // multiply by 8 (shift right 3 to get column in x coords)
+  lda tmcol0
+  sta zpb2
+  lda tmcol0+1
+  sta zpb3
+  rol zpb2
+  rol zpb3
+  rol zpb2
+  rol zpb3
+  rol zpb2
+  rol zpb3
+
+  lda zpb2
+  and #%11111000 // drop last 3 bits after rotates
+  clc
+  adc scrolloffset
+  sta zpb2
+  lda zpb3
+  adc #0
+  sta zpb3
+
+  lda zpb0
+  sec
+  sbc zpb2
+  sta zpb0
+  lda zpb1
+  sbc zpb3
+  sta zpb1
+
+  // sprite position is now calculated and stored in zpb0/1, but we might
+  // need to scroll which will impact the sprite position
+
+  lda zpb1
+  bne updp1psprite
+  lda zpb0
+  cmp #200
+  bcs updp1psl
+  cmp #100
+  bcc updp1psr
+  bcs updp1psprite
+updp1psl:
+  // greater than 200, scroll left if moving right
+  lda p1hva
+  beq updp1psprite
+  bmi updp1psprite
+  // moving right, try to scroll
+  lda zpb0
+  sec
+  sbc $d000
+  sta scrollx
+  jsr scrolll
+  // sprite position is new sprite position minus amount we scrolled
+  lda zpb0
+  sec
+  sbc scrollx
+  sta $d000
+  jmp updp1pd
+updp1psr:
+  // less than 100, scroll right if moving left
+  lda p1hva
+  beq updp1psprite
+  bpl updp1psprite
+  // moving left, try to scroll
+  lda $d000
+  sec
+  sbc zpb0
+  sta scrollx
+  jsr scrollr
+  // sprite position is new sprite position plus amount we scrolled
+  lda zpb0
+  clc
+  adc scrollx
+  sta $d000
+  jmp updp1pd
+updp1psprite:
+  lda zpb0
+  sta $d000
+  lda zpb1
+  bne updp1pmsb
+  lda $d010
+  and #%11111110
+  sta $d010
+  jmp updp1pd
+updp1pmsb:
+  lda $d010
+  ora #%00000001
+  sta $d010
+updp1pd:
   rts
 
 // read a joystick
@@ -514,3 +727,6 @@ ebu:       .byte 0
 ebd:       .byte 0
 ebp:       .byte 0
 
+tmp0:      .byte 0
+
+maxp1px:   .byte 0,0
