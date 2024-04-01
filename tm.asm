@@ -1,22 +1,13 @@
 //tm.s
 
-//tilemap constants, not
-//safe to use these memory
-//locations outside.
+//tilemap constants, not safe to use these memory locations outside.
 
-//constants needing defined
-//scrrow0 1st row on screen visible
-//scrcol0 1st col on screen visible 
-//scrwidth
-//scrheight
-
-//!!! WARN do not change the !!!
-//!!! order of these vars.   !!!
-//!!! They are a struct:     !!!
-//!!! *ptr ptr to run data   !!!
-//!!! *b   byte at run index !!!
-//!!! *rl  run length        !!!
-//!!! *bl  bytes left        !!!
+//!!! WARN do not change the  order of these vars. !!!
+//!!! They are a struct:                           !!!
+//!!!   *ptr ptr to run data (2 bytes)             !!!
+//!!!   *b   byte at run index                     !!!
+//!!!   *rl  run length                            !!!
+//!!!   *bl  bytes left                             !!!
 //character tilemap
 .var chrptr = $43 //and $44
 .var chrb   = $45

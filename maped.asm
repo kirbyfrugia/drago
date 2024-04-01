@@ -2052,8 +2052,9 @@ loadpt:
   sta zpb1 
   jsr fload
   lda fstatus
-  bne loaderr
-
+  beq loadok
+  jmp loaderr
+loadok:
   // load the char map
   jsr clearinput
   ToZPB(<strloadt,>strloadt,zpb0)
@@ -2091,6 +2092,13 @@ loadpt:
   dec fnamelen
   lda fstatus
   bne loaderr
+
+  lda bgclr
+  sta $d021
+  lda bgclr1
+  sta $d022
+  lda bgclr2
+  sta $d023
 
   lda #25
   sta tmrowc
@@ -2130,6 +2138,13 @@ savep:
   jmp saved
 
 savept:
+  lda $d021
+  sta bgclr
+  lda $d022
+  sta bgclr1
+  lda $d023
+  sta bgclr2
+
   ldx #9
   stx fdev
 

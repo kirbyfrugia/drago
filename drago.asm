@@ -4,6 +4,10 @@
 .var maxhvl    = 88
 .var maxhvr    = 166
 
+.var vvzero    = 127
+.var maxvvu    = 88
+.var maxvvd    = 166
+
   jmp init
 
 #import "const.asm"
@@ -48,6 +52,10 @@ init:
   sta p1hvi
   sta p1vvi
 
+  lda #vvzero
+  sta p1vvi
+  sta p1vvi
+
   lda #0
   sta p1gx+1
 
@@ -77,10 +85,10 @@ loop:
   
   lda $dc00
   jsr injs
-  jsr updp1v
-  //jsr updp1p
+  jsr updp1hv
+  jsr updp1vv
   jsr updp1p
-  //jsr log
+  jsr log
   jmp loop
 
 cls:
@@ -170,7 +178,7 @@ copyspr:
   lda #%00000000
   sta $d010 //spr msb
 
-  lda #208
+  lda #218
   sta $d001 //spr0y
   //lda #58
   //sta $d003 //spr1y
@@ -190,7 +198,7 @@ loadmap:
 
   ldy #0
 lml:
-  lda strlevel2,y
+  lda strlevel3,y
   beq lmld
   sta fname,y
   iny
@@ -205,7 +213,9 @@ lmld:
   sta zpb1 
   jsr fload
   lda fstatus
-  bne loaderr
+  beq loadok
+  jmp loaderr
+loadok:
 
   // load the char map
   // set file name, append a "C" to the end of the name
@@ -244,6 +254,13 @@ lmld:
   sta fname,x
   lda fstatus
   bne loaderr
+
+  lda bgclr
+  sta $d021
+  lda bgclr1
+  sta $d022
+  lda bgclr2
+  sta $d023
 
   lda #25
   sta tmrowc
@@ -290,6 +307,22 @@ loadd:
   lda maxp1px
   and #%11000000
   sta maxp1px
+
+  lda #176
+  sta maxp1py
+  lda #0
+  sta maxp1py+1
+
+  rol maxp1py
+  rol maxp1py+1
+  rol maxp1py
+  rol maxp1py+1
+  rol maxp1py
+  rol maxp1py+1
+  lda maxp1py
+  and #%11111000
+  sta maxp1py
+
 
   rts
 
@@ -446,47 +479,47 @@ redraw:
 //   maxhvl - max velocity when moving left
 //   maxhvr - max velocity when moving right
 
-updp1v:
+updp1hv:
   lda ebl
   and #%00000001
-  beq updp1vl
+  beq updp1hvl
   lda ebr
   and #%00000001
-  beq updp1vr
+  beq updp1hvr
   lda #hvzero
   sta p1hvt
-  bne updp1tvd
-updp1vl:
+  bne updp1htvd
+updp1hvl:
   lda #maxhvl
   sta p1hvt
-  bne updp1tvd
-updp1vr:
+  bne updp1htvd
+updp1hvr:
   lda #maxhvr
   sta p1hvt
-updp1tvd:
+updp1htvd:
   lda p1hvi
   cmp p1hvt
-  beq updp1vd
-  bcc updp1accel
+  beq updp1hvd
+  bcc updp1haccel
   cmp #(hvzero+2)
-  bcs updp1decel2
+  bcs updp1hdecel2
   dec p1hvi
-  bne updp1vd
-updp1decel2:
+  bne updp1hvd
+updp1hdecel2:
   sec
   sbc #2
   sta p1hvi
-  bne updp1vd  
-updp1accel:
+  bne updp1hvd  
+updp1haccel:
   cmp #(hvzero-1)
-  bcc updp1accel2
+  bcc updp1haccel2
   inc p1hvi
-  bne updp1vd
-updp1accel2:
+  bne updp1hvd
+updp1haccel2:
   clc
   adc #2
   sta p1hvi
-updp1vd:
+updp1hvd:
   lda p1hvi
   sec
   sbc #hvzero
@@ -496,7 +529,129 @@ updp1vd:
   sta p1hva+1
   rts
 
+updp1vv:
+  lda ebu
+  and #%00000001
+  beq updp1vvup
+  lda ebd
+  and #%00000001
+  beq updp1vvdown
+  lda #vvzero
+  sta p1vvt
+  bne updp1vtvd
+updp1vvup:
+  lda #maxvvu
+  sta p1vvt
+  bne updp1vtvd
+updp1vvdown:
+  lda #maxvvd
+  sta p1vvt
+updp1vtvd:
+  lda p1vvi
+  cmp p1vvt
+  beq updp1vvd
+  bcc updp1vaccel
+  cmp #(vvzero+2)
+  bcs updp1vdecel2
+  dec p1vvi
+  bne updp1vvd
+updp1vdecel2:
+  sec
+  sbc #2
+  sta p1vvi
+  bne updp1vvd  
+updp1vaccel:
+  cmp #(vvzero-1)
+  bcc updp1vaccel2
+  inc p1vvi
+  bne updp1vvd
+updp1vaccel2:
+  clc
+  adc #2
+  sta p1vvi
+updp1vvd:
+  lda p1vvi
+  sec
+  sbc #vvzero
+  sta p1vva
+  lda #0
+  sbc #0
+  sta p1vva+1
+  rts
+
+
+
+
 updp1p:
+  // vertical position first
+  lda p1gy
+  clc
+  adc p1vva
+  sta p1gy
+  sta zpb2
+
+  lda p1gy+1
+  adc p1vva+1
+  sta p1gy+1
+  sta zpb3
+
+  bmi updp1vpneg
+  
+  cmp maxp1py+1
+  bcc updp1vpt
+  lda zpb2
+  cmp maxp1py
+  bcc updp1vpt
+ 
+  // moved below the bottom of the screen
+  lda #0
+  sta p1vva
+  lda #vvzero
+  sta p1vvi
+
+  lda maxp1py
+  sta p1gy
+  lda maxp1py+1
+  sta p1gy+1
+  lda #226
+  sta zpb2
+  bne updp1hp
+updp1vpneg:
+  // move would have moved char above level
+  lda #0
+  sta p1gy
+  sta p1gy+1
+  sta p1vva
+
+  lda #vvzero
+  sta p1vvi
+
+  lda #50
+  sta zpb2
+  bne updp1hp
+updp1vpt:
+  clc
+  ror zpb3
+  ror zpb2
+  ror zpb3
+  ror zpb2
+  ror zpb3
+  ror zpb2
+  lda zpb3
+  and #%00011111
+  sta zpb3
+
+  // zpb2/zpb3 now contain actual position with fractional part truncated
+  // sprite position is (trunc position + 50)
+  lda zpb2
+  clc
+  adc #50
+  sta zpb2
+  lda zpb3
+  adc #0
+  sta zpb3
+
+updp1hp:
   lda p1gx
   clc
   adc p1hva
@@ -508,13 +663,13 @@ updp1p:
   sta p1gx+1
   sta zpb1
 
-  bmi updp1pneg
+  bmi updp1hpneg
 
   cmp maxp1px+1
-  bcc updp1pt
+  bcc updp1hpt
   lda zpb0
   cmp maxp1px
-  bcc updp1pt
+  bcc updp1hpt
   // if here, moved past right edge of screen
 
   lda #0
@@ -527,12 +682,11 @@ updp1p:
   lda maxp1px+1
   sta p1gx+1
   lda #71
-  sta $d000
-  lda $d010
-  ora #%00000001
-  sta $d010
-  jmp updp1pd
-updp1pneg:
+  sta zpb0
+  lda #1
+  sta zpb1
+  jmp updp1psprite
+updp1hpneg:
   // move would have moved char to left of level
   lda #0
   sta p1gx
@@ -543,10 +697,11 @@ updp1pneg:
   sta p1hvi
 
   lda #31
-  sta $d000
-  jmp updp1pd
-
-updp1pt:
+  sta zpb0
+  lda #0
+  sta zpb1
+  jmp updp1psprite
+updp1hpt:
   clc
   ror zpb1
   ror zpb0
@@ -560,25 +715,6 @@ updp1pt:
 
   // zpb0/zpb1 now contain actual position with fractional part truncated
   // sprite position is (trunc position + 31) - (tmcol0 + scroll offset)
-
-  // todo:
-  //   calculate expected sprite position
-  //   if (>100 and <200) {
-  //     update sprite position
-  //   }
-  //   if (expected < 100) {
-  //     scroll right up to (100 - expected)
-  //     calculate (expected sprite position - actual sprite position)
-  //     add difference to sprite position
-  //     update sprite position
-  //   }
-  //   if (expected > 200) {
-  //     scroll left up to (expected - 200)
-  //     calculate (expected sprite position - actual sprite position)
-  //     subtract difference to sprite position
-  //     update sprite position
-  //   }
-
   lda zpb0
   clc
   adc #31
@@ -589,31 +725,31 @@ updp1pt:
 
   // multiply by 8 (shift right 3 to get column in x coords)
   lda tmcol0
-  sta zpb2
+  sta colshift
   lda tmcol0+1
-  sta zpb3
-  rol zpb2
-  rol zpb3
-  rol zpb2
-  rol zpb3
-  rol zpb2
-  rol zpb3
+  sta colshift+1
+  rol colshift
+  rol colshift+1
+  rol colshift
+  rol colshift+1
+  rol colshift
+  rol colshift+1
 
-  lda zpb2
+  lda colshift
   and #%11111000 // drop last 3 bits after rotates
   clc
   adc scrolloffset
-  sta zpb2
-  lda zpb3
+  sta colshift
+  lda colshift+1
   adc #0
-  sta zpb3
+  sta colshift+1
 
   lda zpb0
   sec
-  sbc zpb2
+  sbc colshift
   sta zpb0
   lda zpb1
-  sbc zpb3
+  sbc colshift+1
   sta zpb1
 
   // sprite position is now calculated and stored in zpb0/1, but we might
@@ -623,11 +759,11 @@ updp1pt:
   bne updp1psprite
   lda zpb0
   cmp #200
-  bcs updp1psl
+  bcs updp1hpsl
   cmp #100
-  bcc updp1psr
+  bcc updp1hpsr
   bcs updp1psprite
-updp1psl:
+updp1hpsl:
   // greater than 200, scroll left if moving right
   lda p1hva
   beq updp1psprite
@@ -642,9 +778,11 @@ updp1psl:
   lda zpb0
   sec
   sbc scrollx
-  sta $d000
-  jmp updp1pd
-updp1psr:
+  sta zpb0
+  lda #0
+  sta zpb1
+  beq updp1psprite
+updp1hpsr:
   // less than 100, scroll right if moving left
   lda p1hva
   beq updp1psprite
@@ -659,9 +797,12 @@ updp1psr:
   lda zpb0
   clc
   adc scrollx
-  sta $d000
-  jmp updp1pd
+  sta zpb0
+  lda #0
+  sta zpb1
 updp1psprite:
+  lda zpb2
+  sta $d001
   lda zpb0
   sta $d000
   lda zpb1
@@ -730,3 +871,7 @@ ebp:       .byte 0
 tmp0:      .byte 0
 
 maxp1px:   .byte 0,0
+maxp1py:   .byte 0,0
+
+colshift:  .byte 0,0
+

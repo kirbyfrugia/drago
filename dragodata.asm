@@ -24,3 +24,4 @@ sprbox8x8:
 
 strlevel1: .byte 76,69,86,69,76,49,0
 strlevel2: .byte 76,69,86,69,76,50,0
+strlevel3: .byte 76,69,86,69,76,51,0
