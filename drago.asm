@@ -1,8 +1,16 @@
   *=$8000 "Drago"
 
+//.var hvzero    = 127
+//.var maxhvl    = 88
+//.var maxhvr    = 166
+//
+//.var vvzero    = 127
+//.var maxvvu    = 88
+//.var maxvvd    = 166
+
 .var hvzero    = 127
-.var maxhvl    = 88
-.var maxhvr    = 166
+.var maxhvl    = 98
+.var maxhvr    = 156
 
 .var vvzero    = 127
 .var maxvvu    = 88
@@ -44,8 +52,6 @@ init:
   sta p1vva+1
   sta p1gx+1
   sta p1lx+1
-  sta p1gy+1
-  sta p1ly+1
   sta scrolloffset
 
   lda #hvzero
@@ -59,7 +65,7 @@ init:
   lda #0
   sta p1gx+1
 
-  lda #128
+  lda #8
   sta p1gx
   clc
   rol p1gx
@@ -70,8 +76,18 @@ init:
   clc
   rol p1gx
   rol p1gx+1
-  lda #128
+
+  lda #176
   sta p1gy
+  clc
+  rol p1gy
+  rol p1gy+1
+  clc
+  rol p1gy
+  rol p1gy+1
+  clc
+  rol p1gy
+  rol p1gy+1
  
   jsr initui
   jsr initsys
@@ -88,7 +104,7 @@ loop:
   jsr updp1hv
   jsr updp1vv
   jsr updp1p
-  jsr log
+  //jsr log
   jmp loop
 
 cls:
@@ -536,13 +552,24 @@ updp1vv:
   lda ebd
   and #%00000001
   beq updp1vvdown
-  lda #vvzero
+  lda #maxvvd
   sta p1vvt
   bne updp1vtvd
 updp1vvup:
-  lda #maxvvu
-  sta p1vvt
+  // if not on the ground, ignore
+  lda p1gy+1
+  cmp maxp1py+1
   bne updp1vtvd
+  lda p1gy
+  cmp maxp1py
+  bne updp1vtvd
+  
+  lda #maxvvu
+  sta p1vvi
+  lda #maxvvd
+  sta p1vvt
+
+  bne updp1vvd
 updp1vvdown:
   lda #maxvvd
   sta p1vvt
@@ -553,11 +580,14 @@ updp1vtvd:
   bcc updp1vaccel
   cmp #(vvzero+2)
   bcs updp1vdecel2
+  lda p1vvi
+  sec
+  sbc #2
   dec p1vvi
   bne updp1vvd
 updp1vdecel2:
   sec
-  sbc #2
+  sbc #4
   sta p1vvi
   bne updp1vvd  
 updp1vaccel:
