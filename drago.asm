@@ -164,12 +164,18 @@ initsys:
 initspr:
   ldx #63
 copyspr:
-  lda sprbox8x8,X
+  lda p1spr,X
   sta $3000,X
   //sta $3040,X
   //sta $3080,X
   dex
   bpl copyspr
+
+  // set sprite multi colors
+  lda #$06
+  sta $d025
+  lda #$00
+  sta $d026
 
   ldx #192
   stx $07f8 //spr ptr
@@ -179,9 +185,12 @@ copyspr:
   //stx $07f8+2
 
   lda #%00000001
+  sta $d01c
+
+  lda #%00000001
   sta $d015 //spr enable
 
-  lda #7
+  lda #$0a
   sta $d027 //spr 0 clr
   //sta $d028 //spr 1 clr
   //sta $d029 //spr 2 clr
@@ -324,7 +333,7 @@ loadd:
   and #%11000000
   sta maxp1px
 
-  lda #176
+  lda #164
   sta maxp1py
   lda #0
   sta maxp1py+1
@@ -643,7 +652,7 @@ updp1p:
   sta p1gy
   lda maxp1py+1
   sta p1gy+1
-  lda #226
+  lda #214
   sta zpb2
   bne updp1hp
 updp1vpneg:
