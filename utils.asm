@@ -254,6 +254,9 @@ fll:
   inc zpb1
   bne fll
 flsucc:
+  // process last byte
+  lda fbyte
+  sta (zpb0),y
   lda #0
   sta fstatus
   beq fld

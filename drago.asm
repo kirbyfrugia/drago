@@ -9,12 +9,12 @@
 //.var maxvvd    = 166
 
 .var hvzero    = 127
-.var maxhvl    = 98
-.var maxhvr    = 156
+.var maxhvl    = 68
+.var maxhvr    = 176
 
 .var vvzero    = 127
-.var maxvvu    = 88
-.var maxvvd    = 166
+.var maxvvu    = 93
+.var maxvvd    = 161
 
   jmp init
 
@@ -67,6 +67,9 @@ init:
 
   lda #8
   sta p1gx
+  clc
+  rol p1gx
+  rol p1gx+1
   clc
   rol p1gx
   rol p1gx+1
@@ -136,19 +139,6 @@ initsys:
   ora #%00001000
   sta $d018
 
-  //set colors
-  //bgclr
-  lda #0
-  sta $d021
-
-  //bgclr1
-  lda #7
-  sta $d022
-
-  //bgclr2
-  lda #12
-  sta $d023 
-
   lda #0
   sta scrolloffset
   lda #%00000111
@@ -172,9 +162,9 @@ copyspr:
   bpl copyspr
 
   // set sprite multi colors
-  lda #$06
+  lda #sprmc0
   sta $d025
-  lda #$00
+  lda #sprmc1
   sta $d026
 
   ldx #192
@@ -329,8 +319,10 @@ loadd:
   rol maxp1px+1
   rol maxp1px
   rol maxp1px+1
+  rol maxp1px
+  rol maxp1px+1
   lda maxp1px
-  and #%11000000
+  and #%10000000
   sta maxp1px
 
   lda #164
@@ -591,12 +583,12 @@ updp1vtvd:
   bcs updp1vdecel2
   lda p1vvi
   sec
-  sbc #2
+  sbc #1
   dec p1vvi
   bne updp1vvd
 updp1vdecel2:
   sec
-  sbc #4
+  sbc #2
   sta p1vvi
   bne updp1vvd  
 updp1vaccel:
@@ -742,6 +734,8 @@ updp1hpneg:
   jmp updp1psprite
 updp1hpt:
   clc
+  ror zpb1
+  ror zpb0
   ror zpb1
   ror zpb0
   ror zpb1

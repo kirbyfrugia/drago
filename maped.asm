@@ -51,6 +51,19 @@ tsdatal:
   inx
   bne tsdatal
 
+  //set colors
+  //bgclr
+  lda #0
+  sta $d021
+
+  //bgclr1
+  lda #7
+  sta $d022
+
+  //bgclr2
+  lda #12
+  sta $d023 
+
   jsr initsys
   jsr initui
   jsr redrawui
@@ -202,19 +215,6 @@ initsys:
   sta $d016
 
   jsr initchrs
-
-  //set colors
-  //bgclr
-  lda #0
-  sta $d021
-
-  //bgclr1
-  lda #7
-  sta $d022
-
-  //bgclr2
-  lda #12
-  sta $d023 
 
   rts
 

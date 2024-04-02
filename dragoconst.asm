@@ -3,6 +3,9 @@
 .var scrrow0   = 2
 .var scrheight = 23
 
+.var sprmc0    = $01
+.var sprmc1    = $00
+
 //////////////////////////////////////////////////////////////////////////////
 // warning: these areas of memory are used for file loading and saving.
 // Do not change the order or size of any of it.
