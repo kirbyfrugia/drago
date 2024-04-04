@@ -51,7 +51,7 @@ init:
   sta p1vva
   sta p1vva+1
   sta p1gx+1
-  sta p1lx+1
+  sta p1px+1
   sta scrolloffset
 
   lda #hvzero
@@ -107,7 +107,7 @@ loop:
   jsr updp1hv
   jsr updp1vv
   jsr updp1p
-  //jsr log
+  jsr log
   jmp loop
 
 cls:
@@ -361,10 +361,15 @@ log:
 
   iny
   iny
-  lda p1lx+1
+  lda p1px+1
   jsr loghexit
   iny
-  lda p1lx
+  lda p1px
+  jsr loghexit
+
+  iny
+  iny
+  lda p1sx
   jsr loghexit
 
   iny
@@ -423,10 +428,14 @@ log:
 
   iny
   iny
-  lda p1ly+1
-  jsr loghexit
   iny
-  lda p1ly
+  iny
+  lda p1py
+  jsr loghexit
+
+  iny
+  iny
+  lda p1sy
   jsr loghexit
 
   iny
@@ -436,6 +445,21 @@ log:
   iny
   lda p1vva
   jsr loghexit
+
+  iny
+  iny
+  lda zpb6
+  jsr loghexit
+
+  iny
+  iny
+  lda tmp0
+  jsr loghexit
+  iny
+  iny
+  lda tmp1
+  jsr loghexit
+
   rts
 
 // in its own subroutine just
@@ -486,11 +510,12 @@ redraw:
 //   p1hvi - horiz vel,indexed
 //   p1hva - horiz vel,actual
 //   p1gx  - global xpos
-//   p1lx  - local xpos
+//   p1px  - local xpos (screen pixel coordinates)
+//   p1sx  - screen xpos (screen tile coordinates)
 //   p1vvi - vert vel,indexed
 //   p1vva - vert vel,actual
 //   p1gy  - global ypos
-//   p1ly  - local ypos
+//   p1py  - local ypos
 //   p1hvt - horiz target vel
 //   p1vvt - vert target vel
 //   maxhvl - max velocity when moving left
@@ -611,6 +636,66 @@ updp1vvd:
   rts
 
 
+// updates collisionrects with any rectangles that overlap the character
+// zpb7 - a mask indicating which collisions to check
+//   %11110000 (left, right, top, bottom, color...)
+collidables:
+  lda #0
+  sta offsethi
+  sta zpb6 // number of collisions
+
+  // y will be starting col, x will be starting row
+  lda p1sy
+  sec
+  sbc #scrrow0
+  tax
+  clc
+  adc #p1spanheight
+  sta zpb5
+
+collidablel:
+  lda p1sx
+  tay
+  clc
+  adc #p1spanwidth
+  sta zpb4
+
+  lda mdrunlo,X
+  sta tmrptr
+  lda mdrunhi,X
+  sta tmrptr+1
+  ReadRun(tmrptr)
+  lda mdrunrem,X
+  sta tmbl
+  lda p1sx
+  sta offsetlo
+collidablel2:
+  jsr seek2
+  lda tmrb
+  and zpb7
+  beq collidablel2ncol
+  // collidable
+  inc zpb6
+collidablel2ncol:
+  tya
+  clc
+  adc tmbl
+  bcs collidablelnr
+  cmp zpb4
+  bcs collidablelnr
+  tay
+  lda tmbl
+  sta offsetlo
+  bne collidablel2
+collidablelnr:
+  inx
+  cpx zpb5
+  // todo there may be times where we're checking an extra row or column
+  // so this could be optimized.
+  bcc collidablel
+  beq collidablel
+
+  rts
 
 
 updp1p:
@@ -619,18 +704,18 @@ updp1p:
   clc
   adc p1vva
   sta p1gy
-  sta zpb2
+  sta p1py
 
   lda p1gy+1
   adc p1vva+1
   sta p1gy+1
-  sta zpb3
+  sta p1py+1
 
   bmi updp1vpneg
   
   cmp maxp1py+1
   bcc updp1vpt
-  lda zpb2
+  lda p1py
   cmp maxp1py
   bcc updp1vpt
  
@@ -645,7 +730,7 @@ updp1p:
   lda maxp1py+1
   sta p1gy+1
   lda #214
-  sta zpb2
+  sta p1py
   bne updp1hp
 updp1vpneg:
   // move would have moved char above level
@@ -658,50 +743,50 @@ updp1vpneg:
   sta p1vvi
 
   lda #50
-  sta zpb2
+  sta p1py
   bne updp1hp
 updp1vpt:
   clc
-  ror zpb3
-  ror zpb2
-  ror zpb3
-  ror zpb2
-  ror zpb3
-  ror zpb2
-  lda zpb3
+  ror p1py+1
+  ror p1py
+  ror p1py+1
+  ror p1py
+  ror p1py+1
+  ror p1py
+  lda p1py+1
   and #%00011111
-  sta zpb3
+  sta p1py+1
 
   // zpb2/zpb3 now contain actual position with fractional part truncated
   // sprite position is (trunc position + 50)
-  lda zpb2
+  lda p1py
   clc
   adc #50
-  sta zpb2
-  lda zpb3
+  sta p1py
+  lda p1py+1
   adc #0
-  sta zpb3
+  sta p1py+1
 
 updp1hp:
   lda p1gx
   clc
   adc p1hva
   sta p1gx  
-  sta zpb0
+  sta p1px
 
   lda p1gx+1
   adc p1hva+1
   sta p1gx+1
-  sta zpb1
+  sta p1px+1
 
   bmi updp1hpneg
 
   cmp maxp1px+1
   bcc updp1hpt
-  lda zpb0
+  lda p1px
   cmp maxp1px
   bcc updp1hpt
-  // if here, moved past right edge of screen
+  // if here, moved past right of level
 
   lda #0
   sta p1hva
@@ -713,9 +798,9 @@ updp1hp:
   lda maxp1px+1
   sta p1gx+1
   lda #71
-  sta zpb0
+  sta p1px
   lda #1
-  sta zpb1
+  sta p1px+1
   jmp updp1psprite
 updp1hpneg:
   // move would have moved char to left of level
@@ -728,33 +813,32 @@ updp1hpneg:
   sta p1hvi
 
   lda #31
-  sta zpb0
+  sta p1px
   lda #0
-  sta zpb1
+  sta p1px+1
   jmp updp1psprite
 updp1hpt:
   clc
-  ror zpb1
-  ror zpb0
-  ror zpb1
-  ror zpb0
-  ror zpb1
-  ror zpb0
-  ror zpb1
-  ror zpb0
-  lda zpb1
+  ror p1px+1
+  ror p1px 
+  ror p1px+1
+  ror p1px 
+  ror p1px+1
+  ror p1px 
+  ror p1px+1
+  ror p1px 
+  lda p1px+1
   and #%00011111
-  sta zpb1
+  sta p1px+1
 
-  // zpb0/zpb1 now contain actual position with fractional part truncated
-  // sprite position is (trunc position + 31) - (tmcol0 + scroll offset)
-  lda zpb0
+  // sprite position is (p1px + 31) - (tmcol0 + scroll offset)
+  lda p1px
   clc
   adc #31
-  sta zpb0
-  lda zpb1
+  sta p1px
+  lda p1px+1
   adc #0
-  sta zpb1
+  sta p1px+1
 
   // multiply by 8 (shift right 3 to get column in x coords)
   lda tmcol0
@@ -777,23 +861,23 @@ updp1hpt:
   adc #0
   sta colshift+1
 
-  lda zpb0
+  lda p1px
   sec
   sbc colshift
-  sta zpb0
-  lda zpb1
+  sta p1px
+  lda p1px+1
   sbc colshift+1
-  sta zpb1
+  sta p1px+1
 
   // sprite position is now calculated and stored in zpb0/1, but we might
   // need to scroll which will impact the sprite position
 
-  lda zpb1
+  lda p1px+1
   bne updp1psprite
-  lda zpb0
-  cmp #200
+  lda p1px
+  cmp #246
   bcs updp1hpsl
-  cmp #100
+  cmp #96
   bcc updp1hpsr
   bcs updp1psprite
 updp1hpsl:
@@ -802,18 +886,18 @@ updp1hpsl:
   beq updp1psprite
   bmi updp1psprite
   // moving right, try to scroll
-  lda zpb0
+  lda p1px
   sec
   sbc $d000
   sta scrollx
   jsr scrolll
   // sprite position is new sprite position minus amount we scrolled
-  lda zpb0
+  lda p1px
   sec
   sbc scrollx
-  sta zpb0
+  sta p1px
   lda #0
-  sta zpb1
+  sta p1px+1
   beq updp1psprite
 updp1hpsr:
   // less than 100, scroll right if moving left
@@ -823,32 +907,151 @@ updp1hpsr:
   // moving left, try to scroll
   lda $d000
   sec
-  sbc zpb0
+  sbc p1px
   sta scrollx
   jsr scrollr
   // sprite position is new sprite position plus amount we scrolled
-  lda zpb0
+  lda p1px
   clc
   adc scrollx
-  sta zpb0
+  sta p1px
   lda #0
-  sta zpb1
+  sta p1px+1
 updp1psprite:
-  lda zpb2
+  lda p1py
   sta $d001
-  lda zpb0
+  lda p1px
   sta $d000
-  lda zpb1
+  lda p1px+1
   bne updp1pmsb
   lda $d010
   and #%11111110
   sta $d010
-  jmp updp1pd
+  jmp collide
 updp1pmsb:
   lda $d010
   ora #%00000001
   sta $d010
+collide:
+  // now we're in pixel coordinates, check for collisions with any tiles
+  // first convert pixel coordinates to screen xy coordinates (x: 0..39, y: 0..24)
+  lda $d000
+  sec
+  sbc #31
+  sta p1sx
+  lda $d010
+  and #%00000001
+  sbc #0
+  sta p1sx+1
+
+  ror p1sx+1
+  ror p1sx
+  ror p1sx+1
+  ror p1sx
+  ror p1sx+1
+  ror p1sx
+  lda p1sx
+  and #%00111111
+  sta p1sx
+
+  lda $d001
+  sec
+  sbc #50
+  ror
+  ror
+  ror
+  and #%00011111
+  sta p1sy
+
+
+  lda #%11000000
+  sta zpb7
+  jsr collidables
+
+  lda p1hva
+  bmi collidel
+  beq collidez
+  // moving right
+  lda p1vva
+  bmi collideru
+  beq colliderz
+  // moving right and down
+  lda #$ff
+  sta tmp0
+  jmp updp1pd
+
+collideru:
+  // moving right and up
+  lda #$fa
+  sta tmp0
+  jmp updp1pd
+
+colliderz:
+  // moving right, vertical zero
+  lda #$f0
+  sta tmp0
+  //lda #%11000000
+  //sta zpb7
+  //jsr collidables
+  jmp updp1pd
+collidez:
+  // not moving horiz
+  lda p1vva
+  bmi collidezu
+  beq collidezz
+  // not moving horiz, moving down
+  lda #$0f
+  sta tmp0
+  jmp updp1pd
+
+collidezu:
+  // not moving horiz, moving up
+  lda #$0a
+  sta tmp0
+  jmp updp1pd
+collidel:
+  // moving left
+  lda p1vva
+  bmi collidelu
+  beq collidelz
+  // moving left, moving down
+  lda #$af
+  sta tmp0
+  jmp updp1pd
+
+collidelu:
+  // moving left, moving up
+  lda #$aa
+  sta tmp0
+  jmp updp1pd
+collidelz:
+  // moving left, not moving vert
+  lda #$a0
+  sta tmp0
+  //lda #%11000000
+  //sta zpb7
+  //jsr collidables
+  jmp updp1pd
+
+//collidell:
+//collide
+//  lda (mdptr),Y
+//  and #%
+//
+//  // using the run itself as the collision rectangle.
+//  // at this point, zpb7 contains the start of the run, mdbl is the width
+//
+//  inx
+//  cpx #scrheight
+//  bne collidel
+//
+collidezz:
+  // not moving horiz, not moving vert
+  lda #$00
+  sta tmp0
+
 updp1pd:
+
   rts
 
 // read a joystick
@@ -886,11 +1089,13 @@ time:        .byte 0,0,0
 p1hvi:       .byte 0
 p1hva:       .byte 0,0
 p1gx:        .byte 0,0
-p1lx:        .byte 0,0
+p1px:        .byte 0,0
+p1sx:        .byte 0,0
 p1vvi:       .byte 0
 p1vva:       .byte 0,0
 p1gy:        .byte 0,0
-p1ly:        .byte 0,0
+p1py:        .byte 0,0 // 2 bytes due to a quirk in calculation
+p1sy:        .byte 0
 p1hvt:       .byte 0
 p1vvt:       .byte 0
 
@@ -902,9 +1107,12 @@ ebd:       .byte 0
 ebp:       .byte 0
 
 tmp0:      .byte 0
+tmp1:      .byte 0
 
 maxp1px:   .byte 0,0
 maxp1py:   .byte 0,0
 
 colshift:  .byte 0,0
 
+collisions:     .byte 0
+collisionrects: .fill 48,0 

@@ -6,6 +6,12 @@
 .var sprmc0    = $01
 .var sprmc1    = $00
 
+.var p1width      = 14
+.var p1height     = 20
+// how many screen chars might be collidable with p1
+.var p1spanwidth  = 3
+.var p1spanheight = 4
+
 //////////////////////////////////////////////////////////////////////////////
 // warning: these areas of memory are used for file loading and saving.
 // Do not change the order or size of any of it.
