@@ -11,6 +11,9 @@
 // how many screen chars might be collidable with p1
 .var p1spanwidth  = 3
 .var p1spanheight = 4
+// at what points in the p1 movement do we scroll the screen
+.var scrollmin    = 96
+.var scrollmax    = 226
 
 //////////////////////////////////////////////////////////////////////////////
 // warning: these areas of memory are used for file loading and saving.
