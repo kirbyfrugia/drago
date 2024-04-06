@@ -449,7 +449,7 @@ log:
 
   iny
   iny
-  lda zpb6
+  lda collisions
   jsr loghexit
 
   iny
@@ -645,7 +645,7 @@ updp1vvd:
 collidables:
   lda #0
   sta offsethi
-  sta zpb6 // number of collisions
+  sta collisions
 
   // y will be starting col, x will be starting row
   lda p1sy
@@ -656,48 +656,70 @@ collidables:
   adc #p1spanheight
   sta zpb5
 
-collidablel:
   lda p1sx
+  sta offsetlo
   tay
-  clc
   adc #p1spanwidth
   sta zpb4
-
+collidablel:
   lda mdrunlo,X
   sta tmrptr
   lda mdrunhi,X
   sta tmrptr+1
-  ReadRun(tmrptr)
+  ReadRun(tmrptr) // modifies y, so be careful
   lda mdrunrem,X
   sta tmbl
+
   lda p1sx
   sta offsetlo
-collidablel2:
+  tay
   jsr seek2
+collidablel2:
   lda tmrb
   and zpb7
   beq collidablel2ncol
-  // collidable
-  inc zpb6
+
+  sty tmp0
+collisionbreakpoint:
+  tya
+  ldy collisions
+  sta collrectx1,y
+  clc
+  adc #1
+  adc tmbl // x2
+  sta collrectx2,y
+
+  txa
+  sta collrecty1,y
+  clc
+  adc #8
+  sta collrecty2,y
+  inc collisions
+  ldy tmp0
 collidablel2ncol:
   tya
   clc
+  adc #1
   adc tmbl
   bcs collidablelnr
   cmp zpb4
   bcs collidablelnr
-  tay
-  lda tmbl
-  sta offsetlo
-  bne collidablel2
+  sta tmp0
+  NextRun(tmrptr)
+  ldy tmp0
+  jmp collidablel2
 collidablelnr:
   inx
   cpx zpb5
   // todo there may be times where we're checking an extra row or column
   // so this could be optimized.
-  bcc collidablel
-  beq collidablel
+  bcc collidablelj
+  beq collidablelj
+  bcs collidabled
+collidablelj:
+  jmp collidablel
 
+collidabled:
   rts
 
 
@@ -877,9 +899,9 @@ collide:
   ror p1sx
   ror p1sx+1
   ror p1sx
-  lda p1sx
-  and #%00111111
-  sta p1sx
+  //lda p1sx
+  //and #%00111111
+  //sta p1sx
 
 //  lda $d001
 //  sec
@@ -1129,5 +1151,8 @@ maxp1ly:   .byte 0,0
 
 colshift:  .byte 0,0
 
-collisions:     .byte 0
-collisionrects: .fill 48,0 
+collisions: .byte 0
+collrectx1: .fill 12,0
+collrectx2: .fill 12,0
+collrecty1: .fill 12,0
+collrecty2: .fill 12,0
