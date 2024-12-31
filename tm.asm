@@ -9,20 +9,20 @@
 //!!!   *rl  run length                            !!!
 //!!!   *bl  bytes left                             !!!
 //character tilemap
-.var chrptr = $43 //and $44
-.var chrb   = $45
-.var chrrl  = $46
-.var chrbl  = $47
+.var TM_chrtm_ptr = $43 //and $44
+.var TM_chrtm_char   = $45
+.var TM_chrtm_run_length  = $46
+.var TM_chrtm_bytes_remaining  = $47
 //metadata tilemap
-.var mdptr  = $48 //and $49
-.var mdrb   = $4a
-.var mdrl   = $4b
-.var mdbl   = $4c
+.var TM_mdtm_ptr  = $48 //and $49
+.var TM_mdtm_char   = $4a
+.var TM_mdtm_run_length   = $4b
+.var TM_mdtm_bytes_remaining   = $4c
 //temp tilemap used by routines
-.var tmrptr = $4d //and $4e
-.var tmrb   = $4f
-.var tmrl   = $50
-.var tmbl   = $51
+.var TM_tmptm_ptr = $4d //and $4e
+.var TM_tmptm_char   = $4f
+.var TM_tmptm_run_length   = $50
+.var TM_tmptm_bytes_remaining   = $51
 
 .var scrptr  = $52 //and $53
 .var clrptr  = $3f //and $40
@@ -99,19 +99,19 @@ usild:
   pha
 
   lda chrtmrun0
-  sta tmrptr
+  sta TM_tmptm_ptr
   lda chrtmrun0+1
-  sta tmrptr+1
-  ReadRun(tmrptr)
+  sta TM_tmptm_ptr+1
+  ReadRun(TM_tmptm_ptr)
 
   ldx #0
 uscl:
   jsr seek2
-  lda tmrptr
+  lda TM_tmptm_ptr
   sta crunlo,X
-  lda tmrptr+1
+  lda TM_tmptm_ptr+1
   sta crunhi,X
-  lda tmbl
+  lda TM_tmptm_bytes_remaining
   sta crunrem,X
   sta $7900  
 
@@ -132,18 +132,18 @@ uscld:
   sta offsethi 
 
   lda mdtmrun0
-  sta tmrptr
+  sta TM_tmptm_ptr
   lda mdtmrun0+1
-  sta tmrptr+1
-  ReadRun(tmrptr)
+  sta TM_tmptm_ptr+1
+  ReadRun(TM_tmptm_ptr)
   ldx #0
 usmdl:
   jsr seek2
-  lda tmrptr
+  lda TM_tmptm_ptr
   sta mdrunlo,X
-  lda tmrptr+1
+  lda TM_tmptm_ptr+1
   sta mdrunhi,X
-  lda tmbl
+  lda TM_tmptm_bytes_remaining
   sta mdrunrem,X
 
   inx
@@ -211,29 +211,29 @@ drawscrn:
   ldx #0   
 dsl:
   lda crunlo,X
-  sta chrptr
+  sta TM_chrtm_ptr
   lda crunhi,X
-  sta chrptr+1
-  ReadRun(chrptr)
+  sta TM_chrtm_ptr+1
+  ReadRun(TM_chrtm_ptr)
   lda crunrem,X
-  sta chrbl
+  sta TM_chrtm_bytes_remaining
 
   lda mdrunlo,X
-  sta mdptr
+  sta TM_mdtm_ptr
   lda mdrunhi,X
-  sta mdptr+1
-  ReadRun(mdptr)
+  sta TM_mdtm_ptr+1
+  ReadRun(TM_mdtm_ptr)
   lda mdrunrem,X
-  sta mdbl
+  sta TM_mdtm_bytes_remaining
 
   ldy #0
 dsol:
-  //READB chrptr,tmvar0
-  lda chrb
+  //READB TM_chrtm_ptr,tmvar0
+  lda TM_chrtm_char
   sta (scrptr),Y
 
-  //READB mdptr,tmvar0
-  lda mdrb
+  //READB TM_mdtm_ptr,tmvar0
+  lda TM_mdtm_char
   //AND #%00001111
   sta (clrptr),Y
 
@@ -241,23 +241,23 @@ dsol:
   cpy #scrwidth
   beq dsold
 
-  lda chrbl
+  lda TM_chrtm_bytes_remaining
   bne dsoljdc
   sty tmvar0
-  NextRun(chrptr)
+  NextRun(TM_chrtm_ptr)
   ldy tmvar0
   jmp dsoldmd
 dsoljdc:
-  dec chrbl
+  dec TM_chrtm_bytes_remaining
 dsoldmd:
-  lda mdbl
+  lda TM_mdtm_bytes_remaining
   bne dsoljdm
   sty tmvar0
-  NextRun(mdptr)
+  NextRun(TM_mdtm_ptr)
   ldy tmvar0
   jmp dsol
 dsoljdm:
-  dec mdbl
+  dec TM_mdtm_bytes_remaining
   jmp dsol
 dsold:
 
@@ -408,27 +408,27 @@ mvmrtl:
   sta cused
 
   lda crunlo,X
-  sta chrptr
+  sta TM_chrtm_ptr
   lda crunhi,X
-  sta chrptr+1
+  sta TM_chrtm_ptr+1
 
   lda crunrem,X
   clc
   adc #1
   ldy #0
-  cmp (chrptr),Y
+  cmp (TM_chrtm_ptr),Y
   beq mvmrchpr
   sta crunrem,X
   jmp mvmrtchl
 mvmrchpr:
-  lda chrptr
+  lda TM_chrtm_ptr
   sec
   sbc #2
-  sta chrptr
+  sta TM_chrtm_ptr
   sta crunlo,X
-  lda chrptr+1
+  lda TM_chrtm_ptr+1
   sbc #0
-  sta chrptr+1
+  sta TM_chrtm_ptr+1
   sta crunhi,X
   lda #0
   sta crunrem,X
@@ -441,46 +441,46 @@ mvmrtchl:
   sta cused
 
   ldy #1
-  lda (chrptr),Y
+  lda (TM_chrtm_ptr),Y
   ldy cused
   sta (scrptr),Y
 
-  lda chrptr
+  lda TM_chrtm_ptr
   clc
   adc #2
-  sta chrptr
-  lda chrptr+1
+  sta TM_chrtm_ptr
+  lda TM_chrtm_ptr+1
   adc #0
-  sta chrptr+1
+  sta TM_chrtm_ptr+1
   ldy #0
-  lda (chrptr),Y
+  lda (TM_chrtm_ptr),Y
   jmp mvmrtchl 
 mvmrtchld:
   lda #0
   sta cused
 
   lda mdrunlo,X
-  sta mdptr
+  sta TM_mdtm_ptr
   lda mdrunhi,X
-  sta mdptr+1
+  sta TM_mdtm_ptr+1
 
   lda mdrunrem,X
   clc
   adc #1
   ldy #0
-  cmp (mdptr),Y
+  cmp (TM_mdtm_ptr),Y
   beq mvmrmdpr
   sta mdrunrem,X
   jmp mvmrtmdl
 mvmrmdpr:
-  lda mdptr
+  lda TM_mdtm_ptr
   sec
   sbc #2
-  sta mdptr
+  sta TM_mdtm_ptr
   sta mdrunlo,X
-  lda mdptr+1
+  lda TM_mdtm_ptr+1
   sbc #0
-  sta mdptr+1
+  sta TM_mdtm_ptr+1
   sta mdrunhi,X
   lda #0
   sta mdrunrem,X
@@ -493,19 +493,19 @@ mvmrtmdl:
   sta cused
 
   ldy #1
-  lda (mdptr),Y
+  lda (TM_mdtm_ptr),Y
   ldy cused
   sta (clrptr),Y
 
-  lda mdptr
+  lda TM_mdtm_ptr
   clc
   adc #2
-  sta mdptr
-  lda mdptr+1
+  sta TM_mdtm_ptr
+  lda TM_mdtm_ptr+1
   adc #0
-  sta mdptr+1
+  sta TM_mdtm_ptr+1
   ldy #0
-  lda (mdptr),Y
+  lda (TM_mdtm_ptr),Y
   jmp mvmrtmdl 
 mvmrtmdld:
   inx
@@ -561,9 +561,9 @@ mvmltl:
   sta cused
 
   lda crunlo,X
-  sta chrptr
+  sta TM_chrtm_ptr
   lda crunhi,X
-  sta chrptr+1
+  sta TM_chrtm_ptr+1
 
   lda crunrem,X
   beq mvmlnchr
@@ -571,15 +571,15 @@ mvmltl:
   // keep original crunrem in A
   jmp mvmltchl
 mvmlnchr:
-  NextRun(chrptr)
-  lda chrptr
+  NextRun(TM_chrtm_ptr)
+  lda TM_chrtm_ptr
   sta crunlo,X
-  lda chrptr+1
+  lda TM_chrtm_ptr+1
   sta crunhi,X
   ldy #0
-  lda chrb
+  lda TM_chrtm_char
   sta (scrptr),Y
-  lda chrbl
+  lda TM_chrtm_bytes_remaining
   sta crunrem,X
   clc
   adc #1
@@ -591,28 +591,28 @@ mvmltchl:
   bcs mvmltchld
   sta cused
 
-  lda chrptr
+  lda TM_chrtm_ptr
   clc
   adc #2
-  sta chrptr
-  lda chrptr+1
+  sta TM_chrtm_ptr
+  lda TM_chrtm_ptr+1
   adc #0
-  sta chrptr+1
+  sta TM_chrtm_ptr+1
   ldy #1
-  lda (chrptr),Y
+  lda (TM_chrtm_ptr),Y
   ldy cused
   sta (scrptr),Y
   ldy #0
-  lda (chrptr),Y
+  lda (TM_chrtm_ptr),Y
   jmp mvmltchl 
 mvmltchld:
   lda #0
   sta cused
 
   lda mdrunlo,X
-  sta mdptr
+  sta TM_mdtm_ptr
   lda mdrunhi,X
-  sta mdptr+1
+  sta TM_mdtm_ptr+1
 
   lda mdrunrem,X
   beq mvmlnmdr
@@ -620,15 +620,15 @@ mvmltchld:
   // keep original crunrem in A
   jmp mvmltmdl
 mvmlnmdr:
-  NextRun(mdptr)
-  lda mdptr
+  NextRun(TM_mdtm_ptr)
+  lda TM_mdtm_ptr
   sta mdrunlo,X
-  lda mdptr+1
+  lda TM_mdtm_ptr+1
   sta mdrunhi,X
   ldy #0
-  lda mdrb
+  lda TM_mdtm_char
   sta (clrptr),Y
-  lda mdbl
+  lda TM_mdtm_bytes_remaining
   sta mdrunrem,X
   clc
   adc #1
@@ -640,19 +640,19 @@ mvmltmdl:
   bcs mvmltmdld
   sta cused
 
-  lda mdptr
+  lda TM_mdtm_ptr
   clc
   adc #2
-  sta mdptr
-  lda mdptr+1
+  sta TM_mdtm_ptr
+  lda TM_mdtm_ptr+1
   adc #0
-  sta mdptr+1
+  sta TM_mdtm_ptr+1
   ldy #1
-  lda (mdptr),Y
+  lda (TM_mdtm_ptr),Y
   ldy cused
   sta (clrptr),Y
   ldy #0
-  lda (mdptr),Y
+  lda (TM_mdtm_ptr),Y
   jmp mvmltmdl 
 mvmltmdld:
   inx
@@ -768,21 +768,21 @@ s2l:
   bne s2lnr
   lda offsetlo
   sec
-  sbc tmbl
+  sbc TM_tmptm_bytes_remaining
   beq s2lao
   bcs s2lnr
-  // offset < tmbl
-  lda tmbl
+  // offset < TM_tmptm_bytes_remaining
+  lda TM_tmptm_bytes_remaining
   sec
   sbc offsetlo
-  sta tmbl
+  sta TM_tmptm_bytes_remaining
   bne s2d
 s2lao:
   // at offset, at end of run
-  sta tmbl
+  sta TM_tmptm_bytes_remaining
   beq s2d
 s2lnr:
-  // offset > tmbl
+  // offset > TM_tmptm_bytes_remaining
   // subtract 1 from offset since we
   // will be consuming a byte to get to
   // the next run
@@ -795,12 +795,12 @@ s2lnr:
 s2lnw1:
   lda offsetlo
   sec
-  sbc tmbl
+  sbc TM_tmptm_bytes_remaining
   sta offsetlo
   bcs s2lnw2
   dec offsethi
 s2lnw2:
-  NextRun(tmrptr)
+  NextRun(TM_tmptm_ptr)
   jmp s2ol
 s2d:
   pla

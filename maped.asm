@@ -827,15 +827,15 @@ addcp:
   sta tmcol+1
 
   lda #<chrtm
-  sta tmptr
+  sta TM_ptr
   lda #>chrtm
-  sta tmptr+1
+  sta TM_ptr+1
   jsr addcol
 
   lda #<mdtm
-  sta tmptr
+  sta TM_ptr
   lda #>mdtm
-  sta tmptr+1
+  sta TM_ptr+1
   jsr addcol
 
   lda tmcolc
@@ -877,15 +877,15 @@ decpok:
   sta tmcol+1
 
   lda #<chrtm
-  sta tmptr
+  sta TM_ptr
   lda #>chrtm
-  sta tmptr+1
+  sta TM_ptr+1
   jsr delcol
 
   lda #<mdtm
-  sta tmptr
+  sta TM_ptr
   lda #>mdtm
-  sta tmptr+1
+  sta TM_ptr+1
   jsr delcol
 
   lda tmcolc
@@ -935,17 +935,17 @@ psetchr:
   sta tmrow
 
   lda #<chrtm
-  sta tmptr
+  sta TM_ptr
   lda #>chrtm
-  sta tmptr+1
+  sta TM_ptr+1
   lda sbchr
   sta newb
   jsr setbyte
 
   lda #<mdtm
-  sta tmptr
+  sta TM_ptr
   lda #>mdtm
-  sta tmptr+1
+  sta TM_ptr+1
   lda sbmd
   sta newb
   jsr setbyte  

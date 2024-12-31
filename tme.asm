@@ -1,9 +1,9 @@
 //tme.s
 
 // tilemap edit routines
-.var tmptr  = $5a // and $5b
-.var pptr   = $5c // and $5d
-.var nptr   = $5e // and $5f
+.var TME_ptr  = $5a // and $5b
+.var TME_prev_ptr   = $5c // and $5d
+.var TME_next_ptr   = $5e // and $5f
 
 // indirectly writes a value @P1 at the
 // location of @P2 offset by @P3. A and 
@@ -37,10 +37,10 @@ addcol:
   lda zpb1
   pha
 
-  IndirectRead(tmptr,0) //run0 lo
-  sta tmrptr
-  IndirectRead(tmptr,1) //run0 hi
-  sta tmrptr+1
+  IndirectRead(TME_ptr,0) //run0 lo
+  sta TM_tmptm_ptr
+  IndirectRead(TME_ptr,1) //run0 hi
+  sta TM_tmptm_ptr+1
 
   lda tmcol
   sta offsetlo
@@ -51,14 +51,14 @@ addcol:
   lda #25
   sta zpb0
 
-  ReadRun(tmrptr)
+  ReadRun(TM_tmptm_ptr)
 acl:
   jsr seek2
-  lda tmrb
+  lda TM_tmptm_char
   sta newb
 
   // can add to current
-  lda tmrl
+  lda TM_tmptm_run_length
   cmp #$ff
   bcc acatcr
 
@@ -85,35 +85,35 @@ acl:
   jmp acnl
 acatcr:
   ldy #0
-  lda (tmrptr),Y
+  lda (TM_tmptm_ptr),Y
   clc
   adc #1
-  sta (tmrptr),Y
-  inc tmrl
+  sta (TM_tmptm_ptr),Y
+  inc TM_tmptm_run_length
   jmp acnl
 acatpr:
   ldy #0
-  lda (pptr),Y
+  lda (TME_prev_ptr),Y
   clc
   adc #1
-  sta (pptr),Y
+  sta (TME_prev_ptr),Y
   jmp acnl
 acatnr:
   ldy #0
-  lda (nptr),Y
+  lda (TME_next_ptr),Y
   clc
   adc #1
-  sta (nptr),Y
+  sta (TME_next_ptr),Y
   // seek ahead 1 since we're adding a char
   lda #1
   sta offsetlo
   jsr seek2
 acnl:
   ldy #4
-  lda (tmptr),Y
+  lda (TME_ptr),Y
   sta offsetlo
   iny
-  lda (tmptr),Y
+  lda (TME_ptr),Y
   sta offsethi
 
   lda zpb0
@@ -124,14 +124,14 @@ acnl:
   jmp acl  
 acld:
   ldy #4
-  lda (tmptr),Y
+  lda (TME_ptr),Y
   clc
   adc #1
-  sta (tmptr),Y
+  sta (TME_ptr),Y
   iny
-  lda (tmptr),Y
+  lda (TME_ptr),Y
   adc #0
-  sta (tmptr),Y
+  sta (TME_ptr),Y
 
   jsr compress
   pla
@@ -151,10 +151,10 @@ delcol:
   tya
   pha
 
-  IndirectRead(tmptr,0) //run0 lo
-  sta tmrptr
-  IndirectRead(tmptr,1) //run0 hi
-  sta tmrptr+1
+  IndirectRead(TME_ptr,0) //run0 lo
+  sta TM_tmptm_ptr
+  IndirectRead(TME_ptr,1) //run0 hi
+  sta TM_tmptm_ptr+1
 
   lda tmcol
   sta offsetlo
@@ -163,40 +163,40 @@ delcol:
 
   ldx #25
 
-  ReadRun(tmrptr)
+  ReadRun(TM_tmptm_ptr)
 dcl:
   jsr seek2
   ldy #0
-  lda (tmrptr),Y
+  lda (TM_tmptm_ptr),Y
   sec
   sbc #1
-  sta (tmrptr),Y
+  sta (TM_tmptm_ptr),Y
   //jsr decrun
 
   dex
   beq dcld
 
   ldy #4
-  lda (tmptr),Y
+  lda (TME_ptr),Y
   //sec
   //sbc #1
   sta offsetlo
   iny
-  lda (tmptr),Y
+  lda (TME_ptr),Y
   //sbc #0
   sta offsethi
 
   jmp dcl  
 dcld:
   ldy #4
-  lda (tmptr),Y
+  lda (TME_ptr),Y
   sec
   sbc #1
-  sta (tmptr),Y
+  sta (TME_ptr),Y
   iny
-  lda (tmptr),Y
+  lda (TME_ptr),Y
   sbc #0
-  sta (tmptr),Y
+  sta (TME_ptr),Y
 
   jsr compress
   pla
@@ -214,7 +214,7 @@ getinfo:
   lda #%00000000
   sta bi
 
-  lda tmbl
+  lda TM_tmptm_bytes_remaining
   bne gichkf
 
   // last byte in a run
@@ -223,9 +223,9 @@ getinfo:
   sta bi
   // no branch here on purpose
 gichkf:
-  lda tmrl
+  lda TM_tmptm_run_length
   sec
-  sbc tmbl
+  sbc TM_tmptm_bytes_remaining
   cmp #1
   bne gichkprev
 
@@ -265,7 +265,7 @@ gichknext:
   ora #%00000010
   sta bi
 gichkrl1:
-  lda tmrl
+  lda TM_tmptm_run_length
   cmp #1
   bne gichklr
   // run length 1
@@ -295,18 +295,18 @@ setbyte:
   tya
   pha
 
-  IndirectRead(tmptr,0)
-  sta tmrptr
-  IndirectRead(tmptr,1)
-  sta tmrptr+1
+  IndirectRead(TME_ptr,0)
+  sta TM_tmptm_ptr
+  IndirectRead(TME_ptr,1)
+  sta TM_tmptm_ptr+1
 
-  ReadRun(tmrptr)
+  ReadRun(TM_tmptm_ptr)
   jsr calcoffset
   jsr seek2
-  //READB tmrptr,sb0
+  //READB TM_tmptm_ptr,sb0
   
   lda newb
-  cmp tmrb
+  cmp TM_tmptm_char
   bne sbtests
   jmp setbyted
 sbtests:
@@ -357,16 +357,16 @@ sbtests:
 sbsb:
   ldy #1
   lda newb
-  sta (tmrptr),Y
+  sta (TM_tmptm_ptr),Y
   jmp setbyted
 sblan:
   inc nrl
-  IndirectWrite(nrl,nptr,0)
+  IndirectWrite(nrl,TME_next_ptr,0)
   jsr decrun
   jmp setbyted
 sbfap:
   inc prl
-  IndirectWrite(prl,pptr,0)
+  IndirectWrite(prl,TME_prev_ptr,0)
   jsr decrun
   jmp setbyted
 sbfnap:
@@ -390,17 +390,17 @@ sblnm:
 sbmnm:
   lda newb
   sta sb0
-  lda tmrb
+  lda TM_tmptm_char
   sta sb1
-  lda tmbl
+  lda TM_tmptm_bytes_remaining
   sta sb2
-  lda tmrl
+  lda TM_tmptm_run_length
   sta sb3
 
   // post-char split
   ldy #0
   lda sb2
-  sta (tmrptr),Y
+  sta (TM_tmptm_ptr),Y
 
   // new char
   lda #1
@@ -414,7 +414,7 @@ sbmnm:
   sec
   sbc sb2
   sta numb
-  lda tmrb
+  lda TM_tmptm_char
   sta newb
   jsr insertrun
   jsr decrun
@@ -442,10 +442,10 @@ compress:
   lda zpb1
   pha
 
-  IndirectRead(tmptr,0)
-  sta tmrptr
-  IndirectRead(tmptr,1)
-  sta tmrptr+1
+  IndirectRead(TME_ptr,0)
+  sta TM_tmptm_ptr
+  IndirectRead(TME_ptr,1)
+  sta TM_tmptm_ptr+1
 
 cmprl:
   // todo this doesn't handle the case where the last run is zero length
@@ -453,49 +453,49 @@ cmprl:
   bcs cmprd
 
   ldy #0
-  lda (tmrptr),Y
+  lda (TM_tmptm_ptr),Y
   beq cmprldel
   cmp #255
   beq cmprln
   iny
-  lda (tmrptr),Y
+  lda (TM_tmptm_ptr),Y
   cmp nrb
   bne cmprln
 
   // if here, the next runbyte  matches and we can copy some  of the run here
   ldy #0
-  lda (tmrptr),Y
+  lda (TM_tmptm_ptr),Y
   clc
   adc nrl
   bcs cmprlw
 
   // no wrap, absorb next. next run will get deleted next loop
-  sta (tmrptr),Y
+  sta (TM_tmptm_ptr),Y
   ldy #2
   lda #0
-  sta (tmrptr),Y 
+  sta (TM_tmptm_ptr),Y 
   beq cmprln
 cmprlw:
   // wrapped portion (+1) is new length of next run. current run is 255.
   ldy #2
   adc #0 // add the carry 
-  sta (tmrptr),Y
+  sta (TM_tmptm_ptr),Y
   ldy #0 
   lda #255
-  sta (tmrptr),Y
+  sta (TM_tmptm_ptr),Y
   bne cmprln
 cmprldel:
   // zero length run
   jsr deleterun
   jmp cmprl // don't inc
 cmprln:
-  lda tmrptr
+  lda TM_tmptm_ptr
   clc
   adc #2
-  sta tmrptr
-  lda tmrptr+1
+  sta TM_tmptm_ptr
+  lda TM_tmptm_ptr+1
   adc #0
-  sta tmrptr+1
+  sta TM_tmptm_ptr+1
   jmp cmprl
 cmprd:
   pla
@@ -515,10 +515,10 @@ decrun:
   pha
 
   ldy #0
-  lda (tmrptr),Y
+  lda (TM_tmptm_ptr),Y
   sec
   sbc #1
-  sta (tmrptr),Y
+  sta (TM_tmptm_ptr),Y
   bne decrund
   jsr deleterun   
 decrund:
@@ -536,14 +536,14 @@ deleterun:
   lda zpb1
   pha
 
-  IndirectRead(tmptr,2) //last run lo
+  IndirectRead(TME_ptr,2) //last run lo
   sta drlr
-  IndirectRead(tmptr,3) //last run hi
+  IndirectRead(TME_ptr,3) //last run hi
   sta drlr+1
 
-  lda tmrptr
+  lda TM_tmptm_ptr
   sta zpb0
-  lda tmrptr+1
+  lda TM_tmptm_ptr+1
   sta zpb1
 drl:
   lda zpb0
@@ -575,17 +575,17 @@ drlc:
   jmp drl
 drd:
   ldy #2 // last run lo
-  lda (tmptr),Y
+  lda (TME_ptr),Y
   sec
   sbc #2
-  sta (tmptr),Y
+  sta (TME_ptr),Y
   iny
-  lda (tmptr),Y
+  lda (TME_ptr),Y
   sbc #0
-  sta (tmptr),Y
+  sta (TME_ptr),Y
 
   // update pointers
-  ReadRun(tmrptr)
+  ReadRun(TM_tmptm_ptr)
   jsr peeknext
   jsr peekprev
 
@@ -610,9 +610,9 @@ addrun:
   lda zpb1
   pha
 
-  IndirectRead(tmptr,2) //last run lo
+  IndirectRead(TME_ptr,2) //last run lo
   sta zpb0
-  IndirectRead(tmptr,3) //last run hi
+  IndirectRead(TME_ptr,3) //last run hi
   sta zpb1
 
   jsr peeknext
@@ -628,10 +628,10 @@ arl:
   sta (zpb0),Y
  
   lda zpb0
-  cmp nptr
+  cmp TME_next_ptr
   bne arln
   lda zpb1
-  cmp nptr+1
+  cmp TME_next_ptr+1
   bne arln
   jmp arld
 arln:
@@ -652,14 +652,14 @@ arld:
   sta (zpb0),Y
 
   ldy #2
-  lda (tmptr),Y
+  lda (TME_ptr),Y
   clc
   adc #2
-  sta (tmptr),Y
+  sta (TME_ptr),Y
   iny
-  lda (tmptr),Y
+  lda (TME_ptr),Y
   adc #0
-  sta (tmptr),Y
+  sta (TME_ptr),Y
 
   pla
   sta zpb1
@@ -683,9 +683,9 @@ insertrun:
   lda zpb1
   pha
 
-  IndirectRead(tmptr,2) //last run lo
+  IndirectRead(TME_ptr,2) //last run lo
   sta zpb0
-  IndirectRead(tmptr,3) //last run hi
+  IndirectRead(TME_ptr,3) //last run hi
   sta zpb1
 irl:
   ldy #0
@@ -699,10 +699,10 @@ irl:
   sta (zpb0),Y
  
   lda zpb0
-  cmp tmrptr
+  cmp TM_tmptm_ptr
   bne irln
   lda zpb1
-  cmp tmrptr+1
+  cmp TM_tmptm_ptr+1
   bne irln
   jmp irld
 irln:
@@ -717,20 +717,20 @@ irln:
 irld:
   ldy #0
   lda numb
-  sta (tmrptr),Y
+  sta (TM_tmptm_ptr),Y
   iny
   lda newb
-  sta (tmrptr),Y
+  sta (TM_tmptm_ptr),Y
 
   ldy #2
-  lda (tmptr),Y
+  lda (TME_ptr),Y
   clc
   adc #2
-  sta (tmptr),Y
+  sta (TME_ptr),Y
   iny
-  lda (tmptr),Y
+  lda (TME_ptr),Y
   adc #0
-  sta (tmptr),Y
+  sta (TME_ptr),Y
 
   pla
   sta zpb1
@@ -754,15 +754,15 @@ appendrun:
   pha 
   
   ldy #2
-  lda (tmptr),Y //last run
+  lda (TME_ptr),Y //last run
   clc
   adc #2
-  sta (tmptr),Y
+  sta (TME_ptr),Y
   sta zpb0
   iny
-  lda (tmptr),Y
+  lda (TME_ptr),Y
   adc #0
-  sta (tmptr),Y
+  sta (TME_ptr),Y
   sta zpb1
 
   ldy #0
@@ -790,31 +790,31 @@ peekprev:
   pha
   tya
   pha
-  lda tmrptr
+  lda TM_tmptm_ptr
   sec
   sbc #2
-  sta pptr
-  lda tmrptr+1
+  sta TME_prev_ptr
+  lda TM_tmptm_ptr+1
   sbc #0
-  sta pptr+1
+  sta TME_prev_ptr+1
 
-  IndirectRead(tmptr,0) //first run lo
+  IndirectRead(TME_ptr,0) //first run lo
   sta pkrun
-  IndirectRead(tmptr,1) //first run hi
+  IndirectRead(TME_ptr,1) //first run hi
   sta pkrun+1
 
-  lda pptr+1
+  lda TME_prev_ptr+1
   cmp pkrun+1
   bcc peekprevw
-  lda pptr
+  lda TME_prev_ptr
   cmp pkrun
   bcc peekprevw
 
   ldy #0
-  lda (pptr),Y
+  lda (TME_prev_ptr),Y
   sta prl
   iny
-  lda (pptr),Y
+  lda (TME_prev_ptr),Y
   sta prb
   clc
   jmp peekprevd
@@ -836,26 +836,26 @@ peeknext:
   tya
   pha
 
-  lda tmrptr
+  lda TM_tmptm_ptr
   clc
   adc #2
-  sta nptr
-  lda tmrptr+1
+  sta TME_next_ptr
+  lda TM_tmptm_ptr+1
   adc #0
-  sta nptr+1
+  sta TME_next_ptr+1
 
-  IndirectRead(tmptr,2) //last run lo
+  IndirectRead(TME_ptr,2) //last run lo
   sta pkrun
-  IndirectRead(tmptr,3) //last run hi
+  IndirectRead(TME_ptr,3) //last run hi
   sta pkrun+1
 
   // no overflow if last run >= new
   lda pkrun+1
-  cmp nptr+1
+  cmp TME_next_ptr+1
   bcc pknovft // <
   bne pknovff // >
   lda pkrun
-  cmp nptr
+  cmp TME_next_ptr
   bcs pknovff
 pknovft:
   // overflow true
@@ -864,10 +864,10 @@ pknovft:
 pknovff:
   // overflow false
   ldy #0
-  lda (nptr),Y
+  lda (TME_next_ptr),Y
   sta nrl
   iny
-  lda (nptr),Y
+  lda (TME_next_ptr),Y
   sta nrb
   clc
 peeknextd:
@@ -884,14 +884,14 @@ emptyscrn:
   pha 
 
   lda chrtmrun0
-  sta chrptr
+  sta TM_chrtm_ptr
   lda chrtmrun0+1
-  sta chrptr+1
+  sta TM_chrtm_ptr+1
 
   lda mdtmrun0
-  sta mdptr
+  sta TM_mdtm_ptr
   lda mdtmrun0+1
-  sta mdptr+1
+  sta TM_mdtm_ptr+1
   
   // row and column counts
   lda #25
@@ -908,53 +908,53 @@ emptyscrn:
   // run data
   lda #255
   ldy #0
-  sta (chrptr),Y
-  sta (mdptr),Y
+  sta (TM_chrtm_ptr),Y
+  sta (TM_mdtm_ptr),Y
   ldy #2
-  sta (chrptr),Y
-  sta (mdptr),Y
+  sta (TM_chrtm_ptr),Y
+  sta (TM_mdtm_ptr),Y
   ldy #4
-  sta (chrptr),Y
-  sta (mdptr),Y
+  sta (TM_chrtm_ptr),Y
+  sta (TM_mdtm_ptr),Y
   lda #235
   ldy #6
-  sta (chrptr),Y
-  sta (mdptr),Y
+  sta (TM_chrtm_ptr),Y
+  sta (TM_mdtm_ptr),Y
 
   // #emptychr
   lda #252
   ldy #1
-  sta (chrptr),Y
+  sta (TM_chrtm_ptr),Y
   ldy #3
-  sta (chrptr),Y
+  sta (TM_chrtm_ptr),Y
   ldy #5
-  sta (chrptr),Y
+  sta (TM_chrtm_ptr),Y
   ldy #7
-  sta (chrptr),Y
+  sta (TM_chrtm_ptr),Y
 
   lda #%00000001
   ldy #1
-  sta (mdptr),Y
+  sta (TM_mdtm_ptr),Y
   ldy #3
-  sta (mdptr),Y
+  sta (TM_mdtm_ptr),Y
   ldy #5
-  sta (mdptr),Y
+  sta (TM_mdtm_ptr),Y
   ldy #7
-  sta (mdptr),Y
+  sta (TM_mdtm_ptr),Y
 
-  lda chrptr
+  lda TM_chrtm_ptr
   clc
   adc #6
   sta chrtmrunlast
-  lda chrptr+1
+  lda TM_chrtm_ptr+1
   adc #0
   sta chrtmrunlast+1
 
-  lda mdptr
+  lda TM_mdtm_ptr
   clc
   adc #6
   sta mdtmrunlast
-  lda mdptr+1
+  lda TM_mdtm_ptr+1
   adc #0
   sta mdtmrunlast+1
 

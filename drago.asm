@@ -663,19 +663,19 @@ collidables:
   sta zpb4
 collidablel:
   lda mdrunlo,X
-  sta tmrptr
+  sta TM_tmptm_ptr
   lda mdrunhi,X
-  sta tmrptr+1
-  ReadRun(tmrptr) // modifies y, so be careful
+  sta TM_tmptm_ptr+1
+  ReadRun(TM_tmptm_ptr) // modifies y, so be careful
   lda mdrunrem,X
-  sta tmbl
+  sta TM_tmptm_bytes_remaining
 
   lda p1sx
   sta offsetlo
   tay
   jsr seek2
 collidablel2:
-  lda tmrb
+  lda TM_tmptm_char
   and zpb7
   beq collidablel2ncol
 
@@ -686,7 +686,7 @@ collisionbreakpoint:
   sta collrectx1,y
   clc
   adc #1
-  adc tmbl // x2
+  adc TM_tmptm_bytes_remaining // x2
   sta collrectx2,y
 
   txa
@@ -700,12 +700,12 @@ collidablel2ncol:
   tya
   clc
   adc #1
-  adc tmbl
+  adc TM_tmptm_bytes_remaining
   bcs collidablelnr
   cmp zpb4
   bcs collidablelnr
   sta tmp0
-  NextRun(tmrptr)
+  NextRun(TM_tmptm_ptr)
   ldy tmp0
   jmp collidablel2
 collidablelnr:
